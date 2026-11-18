@@ -63,15 +63,16 @@ public final class Entries {
      * inside the contract, or outside it when outside.
      */
     public static @NotNull String payment(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String contractId, final int amount, final boolean outside) {
-        final @NotNull String project = "/projects/" + projectId;
-        if (given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().jsonPath().getList("$").isEmpty()) {
-            given(Api.asAdmin()).body(Map.of("name", "Bank", "type", "bank")).post(project + "/accounts").then().statusCode(200);
-        }
-        final @NotNull String accountId = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().path("[0].id");
-        final @NotNull String paymentMethodId = given(Api.asAdmin()).get(project + "/payment-methods").then().statusCode(200).extract().path("[0].id");
-        return given(Api.asAdmin()).body(Map.of("id", UUID.randomUUID().toString(), "tableId", contractId, "itemId", itemId, "paymentMethodId", paymentMethodId,
-                "accountId", accountId, "date", LocalDate.now().toString(), "description", "Payment", "amount", amount, "isOutsideContract", outside))
-                .post(project + "/entries").then().statusCode(201).extract().path("id");
+        final @NotNull Map<String, Object> body = paymentOf(projectId, itemId, contractId, amount);
+        body.put("isOutsideContract", outside);
+        return record(Api.asAdmin(), projectId, body).then().statusCode(201).extract().path("id");
+    }
+
+    /** A contractor payment's body of amount on a contract, as a purchase's is, with no columns of a purchase; a draft inside the contract. */
+    public static @NotNull Map<String, Object> paymentOf(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String contractId, final int amount) {
+        final @NotNull Map<String, Object> body = purchaseInto(projectId, itemId, contractId, Map.of());
+        body.putAll(Map.of("amount", amount, "columnValues", Map.of(), "description", "Payment"));
+        return body;
     }
 
     /** Sends the admin's draft for approval. */
