@@ -97,8 +97,7 @@ public final class Report implements ISuiteListener, ITestListener {
      */
     static final class Exchange implements Filter {
         @Override
-        public @NotNull Response filter(final @NotNull FilterableRequestSpecification request, final @NotNull FilterableResponseSpecification response,
-                                        final @NotNull FilterContext context) {
+        public @NotNull Response filter(final @NotNull FilterableRequestSpecification request, final @NotNull FilterableResponseSpecification response, final @NotNull FilterContext context) {
             final @NotNull Response answer = context.next(request, response);
             final ExtentTest test = CURRENT.get();
             if (test == null) {
