@@ -109,7 +109,22 @@ public final class Entries {
         return send(projectId, recordedBy, submit, tables.getString("[0].items[0].id"), tables.getString("[0].items[0].tables[0].id"), Map.of()).then().statusCode(201).extract().path("id");
     }
 
-    private static @NotNull Response send(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit, final @NotNull String itemId, final @NotNull String tableId, final @NotNull Map<String, Object> columns) {
+    /**
+     * A purchase of two units at 100 as recordedBy would send it into the general table of itemId: paid by the project's first method from its first
+     * account, a bank made for it when it has none; a draft, with no supplier and no file. A test changes what it is about.
+     */
+    public static @NotNull Map<String, Object> purchaseOf(final @NotNull String projectId, final @NotNull String itemId) {
+        final @NotNull String tableId = given(Api.asAdmin()).get("/projects/" + projectId + "/items/" + itemId + "/tables").then().statusCode(200).extract()
+                .path("find { it.kind == 'general' }.id");
+        return purchaseInto(projectId, itemId, tableId, Map.of());
+    }
+
+    /** Sends an entry's body as as. */
+    public static @NotNull Response record(final @NotNull RequestSpecification as, final @NotNull String projectId, final @NotNull Map<String, Object> body) {
+        return given(as).body(body).post("/projects/" + projectId + "/entries");
+    }
+
+    private static @NotNull Map<String, Object> purchaseInto(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String tableId, final @NotNull Map<String, Object> columns) {
         final @NotNull String project = "/projects/" + projectId;
         final @NotNull JsonPath accounts = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().jsonPath();
         if (accounts.getList("$").isEmpty()) {
@@ -119,7 +134,13 @@ public final class Entries {
         final @NotNull String paymentMethodId = given(Api.asAdmin()).get(project + "/payment-methods").then().statusCode(200).extract().path("[0].id");
         final @NotNull Map<String, Object> values = new HashMap<>(Map.of("unitPrice", "100", "quantity", "2"));
         values.putAll(columns);
-        return given(recordedBy).body(Map.of("id", UUID.randomUUID().toString(), "tableId", tableId, "itemId", itemId, "paymentMethodId", paymentMethodId, "accountId", accountId,
-                "date", LocalDate.now().toString(), "description", "Cement", "columnValues", values, "submit", submit)).post(project + "/entries");
+        return new HashMap<>(Map.of("id", UUID.randomUUID().toString(), "tableId", tableId, "itemId", itemId, "paymentMethodId", paymentMethodId, "accountId", accountId,
+                "date", LocalDate.now().toString(), "description", "Cement", "columnValues", values, "submit", false));
+    }
+
+    private static @NotNull Response send(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit, final @NotNull String itemId, final @NotNull String tableId, final @NotNull Map<String, Object> columns) {
+        final @NotNull Map<String, Object> body = purchaseInto(projectId, itemId, tableId, columns);
+        body.put("submit", submit);
+        return record(recordedBy, projectId, body);
     }
 }
