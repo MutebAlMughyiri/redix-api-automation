@@ -15,6 +15,8 @@ jobs:
       REDIX_ADMIN_USERNAME: ci-admin
       REDIX_ADMIN_PASSWORD: Ci-admin-passw0rd
       REDIX_ADMIN_NEW_PASSWORD: Ci-admin-chosen-1
+      # The Dev server keeps each email in this folder instead of sending it; the tests read the codes from it (redix.support.Emails).
+      REDIX_EMAIL_FOLDER: ${{ github.workspace }}/emails
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,7 +34,11 @@ jobs:
         run: |
           curl -sSfL https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz | tar -xJ -C "$RUNNER_TEMP"
           export REDIX_Typst__Path="$RUNNER_TEMP/typst-x86_64-unknown-linux-musl/typst"
-          export REDIX_Environment=Dev REDIX_Admin__Username="$REDIX_ADMIN_USERNAME" REDIX_Admin__Password="$REDIX_ADMIN_PASSWORD"
+          # The admin's password is the environment's own, REDIX_Dev_Admin__Password (redix-api #118).
+          export REDIX_Environment=Dev REDIX_Admin__Username="$REDIX_ADMIN_USERNAME" REDIX_Dev_Admin__Password="$REDIX_ADMIN_PASSWORD"
+          mkdir -p "$REDIX_EMAIL_FOLDER"
+          # Every test asks from this one address, so the per-caller limits are raised; the per-login limit stays, and is tested.
+          export REDIX_Email__Folder="$REDIX_EMAIL_FOLDER" REDIX_EmailCodes__PermitsPerHour=100000 REDIX_Registration__PermitsPerHour=100000
           export REDIX_Jwt__SigningKey="$(openssl rand -base64 64 | tr -d '\n')" REDIX_Database__Path="$RUNNER_TEMP/RedixDev.db"
           go build -o "$RUNNER_TEMP/redix-server" ./cmd/server
           nohup "$RUNNER_TEMP/redix-server" > "$RUNNER_TEMP/api.log" 2>&1 &

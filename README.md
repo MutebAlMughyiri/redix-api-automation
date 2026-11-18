@@ -32,6 +32,7 @@ given(Api.asAdmin()).body(request).post("/projects").then().statusCode(201);
 | `REDIX_API_URL` | The API the tests call | `http://127.0.0.1:5010`, the Dev server on this machine |
 | `REDIX_ADMIN_USERNAME`, `REDIX_ADMIN_PASSWORD` | The admin that server was started with | required for any admin request |
 | `REDIX_ADMIN_NEW_PASSWORD` | The password the first sign-in changes the admin's temporary one to; on a server whose admin already changed it, the one that signs in | required for any admin request |
+| `REDIX_EMAIL_FOLDER` | The Dev server's email folder (its `REDIX_Email__Folder`), where the tests read the codes it would have sent; run the server with `REDIX_EmailCodes__PermitsPerHour` and `REDIX_Registration__PermitsPerHour` raised, since every test asks from one address | `emails` |
 
 Start the Dev server from redix-api (`go-backend`, `REDIX_Environment=Dev`), then run `mvn test`, or a test from Testin with `F5`. Never
 point them at qa: they make projects, users and entries.

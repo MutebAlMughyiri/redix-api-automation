@@ -26,6 +26,11 @@ public final class Api {
 
     /** A request as the admin, signed in once for the whole run. */
     public static @NotNull RequestSpecification asAdmin() {
-        return new RequestSpecBuilder().addRequestSpecification(anonymous()).addHeader("Authorization", "Bearer " + Admin.token()).build();
+        return as(Admin.token());
+    }
+
+    /** A request with token, the access token of a session. */
+    public static @NotNull RequestSpecification as(final @NotNull String token) {
+        return new RequestSpecBuilder().addRequestSpecification(anonymous()).addHeader("Authorization", "Bearer " + token).build();
     }
 }
