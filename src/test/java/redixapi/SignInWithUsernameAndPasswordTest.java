@@ -3,7 +3,6 @@
 
 package redixapi;
 
-import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
@@ -17,6 +16,7 @@ import redix.support.Emails;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
+import redix.support.Words;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -335,17 +335,17 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "The email is in the language the phone asked in and arabic for any other", testName = "0b5c8555-1bd3-4561-9c89-a62661058d1d", priority = 34)
     public void theEmailIsInTheLanguageThePhoneAskedInAndArabicForAnyOther() {
         final @NotNull Person english = person();
-        assertEquals(subjectOf(emailAfterAsking(english, english.username(), "en")), word("en", "email.resetSubject"));
+        assertEquals(Emails.subjectOf(emailAfterAsking(english, english.username(), "en")), Words.of("en", "email.resetSubject"));
         final @NotNull Person other = person();
-        assertEquals(subjectOf(emailAfterAsking(other, other.username(), "fr")), word("ar", "email.resetSubject"));
+        assertEquals(Emails.subjectOf(emailAfterAsking(other, other.username(), "fr")), Words.of("ar", "email.resetSubject"));
     }
 
     @Test(description = "An emails subject and body are the translations words in the language asked with its code", testName = "2c8d84b3-3acf-488e-b33e-b620d57252d0", priority = 35)
     public void anEmailsSubjectAndBodyAreTheTranslationsWordsInTheLanguageAskedWithItsCode() {
         final @NotNull Person person = person();
         final @NotNull String email = emailAfterAsking(person, person.username(), "ar");
-        assertEquals(subjectOf(email), word("ar", "email.resetSubject"));
-        final @NotNull String body = word("ar", "email.resetBody");
+        assertEquals(Emails.subjectOf(email), Words.of("ar", "email.resetSubject"));
+        final @NotNull String body = Words.of("ar", "email.resetBody");
         assertTrue(email.contains(body.substring(0, Math.min(12, body.indexOf('{') < 0 ? body.length() : body.indexOf('{')))), email);
     }
 
@@ -359,13 +359,5 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "A reset is in the history by the person with no password hash", testName = "f4694e67-2d49-4188-bd45-b949b4655dcd", priority = 37, enabled = false)
     public void aResetIsInTheHistoryByThePersonWithNoPasswordHash() {
         throw new AssertionError("History has no route to read it over HTTP yet");
-    }
-
-    private static @NotNull String subjectOf(final @NotNull String email) {
-        return email.split("\n")[1].substring("Subject: ".length());
-    }
-
-    private static @NotNull String word(final @NotNull String language, final @NotNull String key) {
-        return given(Api.anonymous()).get("/translations/" + language).then().statusCode(200).extract().as(new TypeRef<Map<String, String>>() {}).get(key);
     }
 }

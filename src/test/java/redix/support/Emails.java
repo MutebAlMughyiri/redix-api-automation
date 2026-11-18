@@ -76,6 +76,11 @@ public final class Emails {
         }
     }
 
+    /** The subject an email was sent with. */
+    public static @NotNull String subjectOf(final @NotNull String email) {
+        return email.split("\n")[1].substring("Subject: ".length());
+    }
+
     /** The six-digit code email carries. */
     public static @NotNull String codeIn(final @NotNull String email) {
         final @NotNull Matcher code = CODE.matcher(email);
