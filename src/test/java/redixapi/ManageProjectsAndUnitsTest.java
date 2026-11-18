@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -50,20 +49,6 @@ public class ManageProjectsAndUnitsTest {
         final @NotNull JsonPath started = start(project(uniqueName(), List.of(units))).then().statusCode(201).extract().jsonPath();
         given(Api.asAdmin()).post("/projects/" + started.getString("id") + "/approve").then().statusCode(200);
         return started;
-    }
-
-    private static @NotNull Map<String, Object> registration(final @NotNull String name, final @NotNull List<String> units) {
-        final @NotNull Map<String, Object> body = project(name, units);
-        final @NotNull String tag = String.valueOf(ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999));
-        body.put("displayName", "Manager " + tag);
-        body.put("username", "manager" + tag);
-        body.put("mobile", "05" + tag);
-        body.put("password", People.PASSWORD);
-        return body;
-    }
-
-    private static @NotNull Response register(final @NotNull Map<String, Object> body) {
-        return given(Api.anonymous()).body(body).post("/projects/register");
     }
 
     private static @NotNull JsonPath listed(final @NotNull String projectId) {
@@ -130,9 +115,9 @@ public class ManageProjectsAndUnitsTest {
 
     @Test(description = "More_info_a registration with a description too long creates nothing", testName = "1991c670-7754-4902-90db-a1d5cb82a980", priority = 5)
     public void moreInfoARegistrationWithADescriptionTooLongCreatesNothing() {
-        final @NotNull Map<String, Object> body = registration(uniqueName(), List.of("A1"));
+        final @NotNull Map<String, Object> body = Projects.registration(uniqueName(), List.of("A1"));
         body.put("description", "d".repeat(2001));
-        refusedAs(register(body), 400, "invalidDescription");
+        refusedAs(Projects.register(body), 400, "invalidDescription");
         given(Api.anonymous()).body(Map.of("username", body.get("username"), "password", People.PASSWORD)).post("/auth/sign-in").then().statusCode(401);
     }
 
@@ -163,9 +148,9 @@ public class ManageProjectsAndUnitsTest {
 
     @Test(description = "More_info_the admin reads the description before deciding", testName = "f2d5c59c-9964-41b1-b204-35dea758a733", priority = 9)
     public void moreInfoTheAdminReadsTheDescriptionBeforeDeciding() {
-        final @NotNull Map<String, Object> body = registration(uniqueName(), List.of("A1"));
+        final @NotNull Map<String, Object> body = Projects.registration(uniqueName(), List.of("A1"));
         body.put("description", "Villas by the sea");
-        final @NotNull String project = register(body).then().statusCode(201).extract().path("id");
+        final @NotNull String project = Projects.register(body).then().statusCode(201).extract().path("id");
         given(Api.asAdmin()).get("/projects/registered").then().statusCode(200)
                 .body("find { it.id == '" + project + "' }.description", equalTo("Villas by the sea"));
     }
@@ -353,8 +338,8 @@ public class ManageProjectsAndUnitsTest {
 
     @Test(description = "A registration cannot repeat a units name", testName = "08465e47-9b47-4f7f-a10b-b7fbbfe2e3d8", priority = 32)
     public void aRegistrationCannotRepeatAUnitsName() {
-        final @NotNull Map<String, Object> body = registration(uniqueName(), List.of("A1", "A1 "));
-        refusedAs(register(body), 400, "unitNameTaken");
+        final @NotNull Map<String, Object> body = Projects.registration(uniqueName(), List.of("A1", "A1 "));
+        refusedAs(Projects.register(body), 400, "unitNameTaken");
         given(Api.anonymous()).body(Map.of("username", body.get("username"), "password", People.PASSWORD)).post("/auth/sign-in").then().statusCode(401);
     }
 
@@ -372,8 +357,8 @@ public class ManageProjectsAndUnitsTest {
 
     @Test(description = "Whoever starts a project manages it", testName = "d7b8c6cc-4046-4cc7-ac65-a425e8c28cd1", priority = 34)
     public void whoeverStartsAProjectManagesIt() {
-        final @NotNull Map<String, Object> body = registration(uniqueName(), List.of("A1"));
-        final @NotNull String project = register(body).then().statusCode(201).extract().path("id");
+        final @NotNull Map<String, Object> body = Projects.registration(uniqueName(), List.of("A1"));
+        final @NotNull String project = Projects.register(body).then().statusCode(201).extract().path("id");
         given(Api.asAdmin()).post("/projects/" + project + "/approve").then().statusCode(200);
         final @NotNull String token = People.signIn((String) body.get("username"), People.PASSWORD).accessToken();
         given(Api.as(token)).get("/projects").then().statusCode(200).body("find { it.id == '" + project + "' }.permissions", hasItem("manageProject"));

@@ -36,17 +36,25 @@ public final class People {
     public static final @NotNull String TEMPORARY = "Temporary-passw0rd-1";
 
     /**
-     * A person made in projectId holding ReadProject and permissions, signed in with their temporary password, which is all such a session may
-     * change. Their username has letters and digits, so the password policy can only refuse one that is the username for being it.
+     * A new person as the manager types them, holding ReadProject and permissions: every field unique, a username of letters and digits, so the
+     * password policy can only refuse one that is the username for being it, and the temporary password TEMPORARY.
      */
-    public static @NotNull Person newcomer(final @NotNull String projectId, final @NotNull String... permissions) {
+    public static @NotNull CreateUserRequest.CreateUserRequestBuilder request(final @NotNull String... permissions) {
         final @NotNull String tag = String.valueOf(ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999));
-        final @NotNull CreateUserRequest request = CreateUserRequest.builder().displayName("Person " + tag).username("person" + tag)
-                .mobile("05" + ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999)).email("person" + tag + "@redix.test")
-                .temporaryPassword(TEMPORARY).permissions(List.of(permissions)).roleName("").partnerIds(List.of()).build();
+        return CreateUserRequest.builder().displayName("Person " + tag).username("person" + tag).mobile("05" + ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999))
+                .email("person" + tag + "@redix.test").temporaryPassword(TEMPORARY).permissions(List.of(permissions)).roleName("").partnerIds(List.of());
+    }
+
+    /** A person made in projectId as request says, signed in with their temporary password, which is all such a session may change. */
+    public static @NotNull Person newcomer(final @NotNull String projectId, final @NotNull CreateUserRequest request) {
         final @NotNull String id = given(Api.asAdmin()).body(request).post("/projects/" + projectId + "/users").then().statusCode(201).extract()
                 .as(CreateUserResponse.class).id();
         return new Person(id, request.getUsername(), request.getEmail(), signIn(request.getUsername(), TEMPORARY).accessToken());
+    }
+
+    /** A person made in projectId holding ReadProject and permissions, signed in with their temporary password. */
+    public static @NotNull Person newcomer(final @NotNull String projectId, final @NotNull String... permissions) {
+        return newcomer(projectId, request(permissions).build());
     }
 
     /** A person in projectId holding ReadProject and permissions, their temporary password already changed to PASSWORD, signed in. */
