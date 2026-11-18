@@ -58,6 +58,22 @@ public final class Entries {
                 "description", "Capital", "amount", amount, "columnValues", Map.of("movementType", movement))).post(project + "/entries").then().statusCode(201).extract().path("id");
     }
 
+    /**
+     * A contractor payment of amount the admin recorded on a contract (UC-027), paid by the project's first method from its bank, kept as a draft:
+     * inside the contract, or outside it when outside.
+     */
+    public static @NotNull String payment(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String contractId, final int amount, final boolean outside) {
+        final @NotNull String project = "/projects/" + projectId;
+        if (given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().jsonPath().getList("$").isEmpty()) {
+            given(Api.asAdmin()).body(Map.of("name", "Bank", "type", "bank")).post(project + "/accounts").then().statusCode(200);
+        }
+        final @NotNull String accountId = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().path("[0].id");
+        final @NotNull String paymentMethodId = given(Api.asAdmin()).get(project + "/payment-methods").then().statusCode(200).extract().path("[0].id");
+        return given(Api.asAdmin()).body(Map.of("id", UUID.randomUUID().toString(), "tableId", contractId, "itemId", itemId, "paymentMethodId", paymentMethodId,
+                "accountId", accountId, "date", LocalDate.now().toString(), "description", "Payment", "amount", amount, "isOutsideContract", outside))
+                .post(project + "/entries").then().statusCode(201).extract().path("id");
+    }
+
     /** Sends the admin's draft for approval. */
     public static void submit(final @NotNull String projectId, final @NotNull String entryId) {
         given(Api.asAdmin()).post("/projects/" + projectId + "/entries/" + entryId + "/submit").then().statusCode(200);
