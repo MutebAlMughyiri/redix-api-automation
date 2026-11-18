@@ -32,7 +32,7 @@ public class PermissionsTest {
     /** Every permission someone may hold in a project, in the order the API lists them; SeeAllCapital and SeeChosenCapital exclude each other. */
     private static final @NotNull List<String> IN_A_PROJECT = List.of("manageUsers", "readProject", "seeAllCapital", "seeChosenCapital", "manageProject",
             "manageStructure", "manageSettings", "addSupplier", "chargeAnyAccount", "recordEntries", "manageAnyEntry", "deleteEntries", "removeApprovedEntries",
-            "attachFiles", "approveEntries", "moveMoney", "seeReports", "generateReports", "seeProjectHistory");
+            "attachFiles", "approveEntries", "moveMoney", "seeReports", "generateReports", "seeProjectHistory", "manageProjectFiles");
 
     /** The routes that change something open to anyone: signing in, renewing, the forgotten password, registering a project. */
     private static final @NotNull Set<String> OPEN_CHANGES = Set.of("POST /auth/sign-in", "POST /auth/refresh", "POST /auth/forgot-password",
@@ -254,7 +254,7 @@ public class PermissionsTest {
     @Test(description = "Whoever registers a project holds every permission of a project in it", testName = "0353b780-89e6-4517-9d99-bcd2a23e10c3", priority = 19)
     public void whoeverRegistersAProjectHoldsEveryPermissionOfAProjectInIt() {
         final @NotNull Registered registered = Projects.registered();
-        assertEquals(permissionsOf(registered.token(), registered.id()).size(), 17);
+        assertEquals(permissionsOf(registered.token(), registered.id()).size(), 18);
     }
 
     @Test(description = "Deleting is its own permission", testName = "2e546995-7570-4aa6-98d9-7d99df618d50", priority = 20)
