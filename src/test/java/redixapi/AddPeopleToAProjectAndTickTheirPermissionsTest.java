@@ -263,7 +263,7 @@ public class AddPeopleToAProjectAndTickTheirPermissionsTest {
     @Test(description = "With a second manager the first can leave", testName = "b099c879-b73d-4f36-a147-e8ebef5a1cb9", priority = 22)
     public void withASecondManagerTheFirstCanLeave() {
         final @NotNull String project = Projects.approved();
-        final @NotNull String adminId = People.signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD")).userId();
+        final @NotNull String adminId = People.admin().userId();
         final @NotNull Person second = People.in(project, "manageUsers");
         given(second.asked()).delete("/projects/" + project + "/users/" + adminId + "/permissions/manageUsers").then().statusCode(200);
         refusedAs(given(second.asked()).delete("/projects/" + project + "/users/" + second.id() + "/permissions/manageUsers"), 409, "lastManager");
@@ -273,7 +273,7 @@ public class AddPeopleToAProjectAndTickTheirPermissionsTest {
     @Test(description = "A manager inactive in the project does not count as the one who stays", testName = "7ec02a72-77b7-4354-a901-92e4ed817847", priority = 23)
     public void aManagerInactiveInTheProjectDoesNotCountAsTheOneWhoStays() {
         final @NotNull String project = Projects.approved();
-        final @NotNull String adminId = People.signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD")).userId();
+        final @NotNull String adminId = People.admin().userId();
         final @NotNull Person second = People.in(project, "manageUsers");
         given(Api.asAdmin()).post("/projects/" + project + "/users/" + second.id() + "/disable").then().statusCode(200);
         refusedAs(untick(project, adminId, "manageUsers"), 409, "lastManager");

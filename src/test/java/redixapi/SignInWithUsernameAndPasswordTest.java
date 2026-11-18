@@ -157,7 +157,7 @@ public class SignInWithUsernameAndPasswordTest {
 
     @Test(description = "The first user is the admin from configuration and must change the password", testName = "b3526a9c-222c-49ff-b8db-0f1d6c3443b4", priority = 12)
     public void theFirstUserIsTheAdminFromConfigurationAndMustChangeThePassword() {
-        final @NotNull SignInResponse admin = People.signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD"));
+        final @NotNull SignInResponse admin = People.admin();
         assertTrue(admin.permissions().contains("approveProjects"), "the admin holds " + admin.permissions());
         assertFalse(admin.mustChangePassword(), "the first sign-in of this run changed the configured password");
     }

@@ -65,6 +65,12 @@ public final class People {
         return new Person(newcomer.id(), newcomer.username(), newcomer.email(), signIn(newcomer.username(), PASSWORD).accessToken());
     }
 
+    /** The admin, signed in on a device of their own once the run's first sign-in has changed the password the API was started with. */
+    public static @NotNull SignInResponse admin() {
+        Admin.token();
+        return signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD"));
+    }
+
     /** Signs username in with password, wanting 200. */
     public static @NotNull SignInResponse signIn(final @NotNull String username, final @NotNull String password) {
         return given(Api.anonymous()).body(Map.of("username", username, "password", password)).post("/auth/sign-in").then().statusCode(200).extract()

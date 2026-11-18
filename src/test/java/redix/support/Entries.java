@@ -4,6 +4,7 @@
 package redix.support;
 
 import io.restassured.path.json.JsonPath;
+import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
@@ -19,12 +20,17 @@ public final class Entries {
 
     /** A purchase the admin recorded and kept as a draft. */
     public static @NotNull String draft(final @NotNull String projectId) {
-        return record(projectId, false);
+        return record(projectId, Api.asAdmin(), false);
+    }
+
+    /** A purchase recordedBy recorded and kept as a draft: someone holding RecordEntries, and ChargeAnyAccount to pay from the project's bank. */
+    public static @NotNull String draft(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy) {
+        return record(projectId, recordedBy, false);
     }
 
     /** A purchase the admin recorded and sent for approval (UC-028). */
     public static @NotNull String waiting(final @NotNull String projectId) {
-        return record(projectId, true);
+        return record(projectId, Api.asAdmin(), true);
     }
 
     /** A purchase the admin recorded, sent and approved (UC-032). */
@@ -41,7 +47,7 @@ public final class Entries {
         return entryId;
     }
 
-    private static @NotNull String record(final @NotNull String projectId, final boolean submit) {
+    private static @NotNull String record(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit) {
         final @NotNull String project = "/projects/" + projectId;
         final @NotNull JsonPath tables = given(Api.asAdmin()).get(project + "/entry-tables").then().statusCode(200).extract().jsonPath();
         final @NotNull JsonPath accounts = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().jsonPath();
@@ -51,7 +57,7 @@ public final class Entries {
         final @NotNull String accountId = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().path("[0].id");
         final @NotNull String paymentMethodId = given(Api.asAdmin()).get(project + "/payment-methods").then().statusCode(200).extract().path("[0].id");
         final @NotNull String entryId = UUID.randomUUID().toString();
-        given(Api.asAdmin()).body(Map.of("id", entryId, "tableId", tables.getString("[0].items[0].tables[0].id"), "itemId", tables.getString("[0].items[0].id"),
+        given(recordedBy).body(Map.of("id", entryId, "tableId", tables.getString("[0].items[0].tables[0].id"), "itemId", tables.getString("[0].items[0].id"),
                         "paymentMethodId", paymentMethodId, "accountId", accountId, "date", LocalDate.now().toString(), "description", "Cement",
                         "columnValues", Map.of("unitPrice", "100", "quantity", "2"), "submit", submit))
                 .post(project + "/entries").then().statusCode(201);

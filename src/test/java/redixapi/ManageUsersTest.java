@@ -302,7 +302,7 @@ public class ManageUsersTest {
     @Test(description = "With a second active manager the first can be made inactive and then the second cannot", testName = "a80229d5-1d3c-4e55-8c9a-03ef3fceccdb", priority = 25)
     public void withASecondActiveManagerTheFirstCanBeMadeInactiveAndThenTheSecondCannot() {
         final @NotNull String project = Projects.approved();
-        final @NotNull String adminId = People.signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD")).userId();
+        final @NotNull String adminId = People.admin().userId();
         final @NotNull Person second = People.in(project, "manageUsers");
         membership(second, project, adminId, "disable").then().statusCode(200);
         refusedAs(membership(second, project, second.id(), "disable"), 409, "lastManager");
@@ -412,7 +412,7 @@ public class ManageUsersTest {
     public void aManagerCannotTakeOverTheAdmin() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person manager = People.in(project, "manageUsers");
-        final @NotNull String adminId = People.signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD")).userId();
+        final @NotNull String adminId = People.admin().userId();
         refusedAs(given(manager.asked()).body(Map.of("temporaryPassword", "Second-temp0rary-1")).post("/users/" + adminId + "/reset-password"), 403, "otherProject");
         refusedAs(given(manager.asked()).body(Map.of("displayName", "Taken", "mobile", "", "email", "taken@redix.test")).put("/users/" + adminId), 403, "otherProject");
     }
