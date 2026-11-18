@@ -10,6 +10,7 @@ import redix.model.auth.ChangePasswordRequest;
 import redix.model.auth.ChangePasswordResponse;
 import redix.model.auth.SignInResponse;
 import redix.support.Api;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -95,9 +96,12 @@ public class ChangePasswordTest {
         given(person.asked()).get("/projects").then().statusCode(200);
     }
 
-    @Test(description = "A password change is in the history with the values before and after but never the password hash", testName = "48efbe91-3c2e-45c3-a350-c4f43beccaf0", priority = 7, enabled = false)
+    @Test(description = "A password change is in the history with the values before and after but never the password hash", testName = "48efbe91-3c2e-45c3-a350-c4f43beccaf0", priority = 7)
     public void aPasswordChangeIsInTheHistoryWithTheValuesBeforeAndAfterButNeverThePasswordHash() {
-        throw new AssertionError("History has no route to read a password change over HTTP; Go's internal/auth tests prove it");
+        final @NotNull Person person = People.in(Projects.approved());
+        assertTrue(History.kindsOf(person.asked()).contains("passwordChanged"));
+        final @NotNull String written = History.mineAsWritten(person.asked());
+        assertFalse(written.contains("Hash") || written.contains(People.PASSWORD) || written.contains(People.TEMPORARY), written);
     }
 
     @Test(description = "Changing the password needs a session", testName = "e751582b-769a-487e-bbd0-262d132555cc", priority = 8)

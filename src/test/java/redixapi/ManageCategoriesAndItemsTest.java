@@ -11,6 +11,7 @@ import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Contracts;
 import redix.support.Entries;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -334,9 +335,13 @@ public class ManageCategoriesAndItemsTest {
         assertFalse(offeredItemNames(project, "purchases").contains(Structure.PURCHASES));
     }
 
-    @Test(description = "A changed type is in the history old and new", testName = "20a3d49e-d6ab-43b8-a927-527e9c947728", priority = 26, enabled = false)
+    @Test(description = "A changed type is in the history old and new", testName = "20a3d49e-d6ab-43b8-a927-527e9c947728", priority = 26)
     public void aChangedTypeIsInTheHistoryOldAndNew() {
-        throw new AssertionError("History has no route that reads an item's lines over HTTP; Go's internal/structure tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull String name = "Item " + UUID.randomUUID().toString().substring(0, 6);
+        final @NotNull String item = addItem(project, addCategory(project, "Category " + UUID.randomUUID().toString().substring(0, 6)), name, "purchases");
+        changeType(project, item, "both").then().statusCode(200);
+        assertEquals(History.said(Api.asAdmin(), project, "?area=structure").get(0), "changed item " + name);
     }
 
     @Test(description = "An item with an entry keeps its type", testName = "c942df83-48d7-4e0f-860c-baf0f5f7e9e9", priority = 27)

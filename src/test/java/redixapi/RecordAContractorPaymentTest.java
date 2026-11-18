@@ -10,6 +10,7 @@ import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Entries;
 import redix.support.Files;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -295,9 +296,14 @@ public class RecordAContractorPaymentTest {
         refusedAs(record(project, body), 409, "projectFinished");
     }
 
-    @Test(description = "A payment is in the history", testName = "7a55a2ba-b655-4236-ab61-63cc15062e09", priority = 22, enabled = false)
+    @Test(description = "A payment is in the history", testName = "7a55a2ba-b655-4236-ab61-63cc15062e09", priority = 22)
     public void aPaymentIsInTheHistory() {
-        throw new AssertionError("History has no route that reads an entry's own lines over HTTP; Go's internal/entries tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull String item = item(project);
+        Entries.payment(project, item, contract(project, item, 10000), 500, false);
+        final @NotNull Map<String, Object> line = History.of(Api.asAdmin(), project, "?area=entries").get(0);
+        assertEquals(History.said(line).substring(0, "drafted entry".length()), "drafted entry");
+        assertEquals(((Number) line.get("amount")).doubleValue(), 500.0);
     }
 
     @Test(description = "A payment sent again lands once", testName = "2341617c-8ce5-4de5-a6ba-a64ea6fbd42b", priority = 23)

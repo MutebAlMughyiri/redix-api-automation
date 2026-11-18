@@ -317,7 +317,7 @@ public class ManagePartnersTest {
         assertEquals(history(project, Api.asAdmin(), "?partner=" + abdullah).getList("partner"), List.of("Abdullah"));
         final @NotNull Person manager = People.in(project, "manageSettings", "seeAllCapital");
         given(manager.asked()).body(Map.of("name", "Zaid")).post(partners(project)).then().statusCode(200);
-        assertEquals(history(project, manager.asked(), "?mine=true").getList("partner"), List.of("Zaid"));
+        assertEquals(history(project, manager.asked(), "?by=" + manager.id()).getList("partner"), List.of("Zaid"));
     }
 
     @Test(description = "Someone with chosen partners sees only their lines and someone with neither sees none", testName = "9ed30605-f72a-4a92-905c-e23092700506", priority = 25)

@@ -4,10 +4,12 @@
 package redixapi;
 
 import io.restassured.response.Response;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Emails;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -257,8 +259,15 @@ public class SetTheDefaultProjectTest {
         assertTrue(!Words.of("ar", "email.confirmSubject").equals(Words.of("en", "email.confirmSubject")));
     }
 
-    @Test(description = "A confirmed address is in the history by the person with the old and the new", testName = "df8eaa6b-82a4-4356-82c5-49f4d34dc24e", priority = 22, enabled = false)
+    @Test(description = "A confirmed address is in the history by the person with the old and the new", testName = "df8eaa6b-82a4-4356-82c5-49f4d34dc24e", priority = 22)
     public void aConfirmedAddressIsInTheHistoryByThePersonWithTheOldAndTheNew() {
-        throw new AssertionError("History has no route that reads a person's email lines over HTTP; Go's internal/auth tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = People.in(project);
+        final @NotNull String address = "confirmed" + UUID.randomUUID().toString().substring(0, 6) + "@redix.test";
+        confirm(person, Emails.codeIn(confirmationTo(person, address, "en"))).then().statusCode(204);
+        final @NotNull Map<String, Object> line = History.mine(person.asked()).get(0);
+        assertEquals(line.get("kind"), "changed");
+        assertEquals(line.get("by"), History.nameOf(project, person.id()));
+        assertTrue(line.get("about").toString().contains(address), line.toString());
     }
 }

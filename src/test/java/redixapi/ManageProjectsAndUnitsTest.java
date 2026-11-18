@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Entries;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -365,18 +366,24 @@ public class ManageProjectsAndUnitsTest {
         given(Api.as(token)).body(Map.of("name", "B2")).post("/projects/" + project + "/units").then().statusCode(200);
     }
 
-    @Test(description = "Creating a project is in the history with its name", testName = "83321662-f97a-4953-b17e-ef7836bfbb57", priority = 35, enabled = false)
+    @Test(description = "Creating a project is in the history with its name", testName = "83321662-f97a-4953-b17e-ef7836bfbb57", priority = 35)
     public void creatingAProjectIsInTheHistoryWithItsName() {
-        throw new AssertionError("History has no route that reads a project's own lines over HTTP; Go's internal/projects tests prove it");
+        final @NotNull JsonPath started = approvedWith("A1");
+        final @NotNull List<String> said = History.said(Api.asAdmin(), started.getString("id"), "?area=project");
+        assertEquals(said.get(said.size() - 1), "registered project " + started.getString("name"));
     }
 
-    @Test(description = "Adding a unit is in the history with its name", testName = "004984d7-f449-43ac-b147-1562acf4d232", priority = 36, enabled = false)
+    @Test(description = "Adding a unit is in the history with its name", testName = "004984d7-f449-43ac-b147-1562acf4d232", priority = 36)
     public void addingAUnitIsInTheHistoryWithItsName() {
-        throw new AssertionError("History has no route that reads a project's own lines over HTTP; Go's internal/projects tests prove it");
+        final @NotNull String project = approvedWith().getString("id");
+        addUnit(project, "B9").then().statusCode(200);
+        assertEquals(History.said(Api.asAdmin(), project, "?area=project").get(0), "created unit B9");
     }
 
-    @Test(description = "Closing a project is in the history with its status old and new", testName = "017244c9-1750-465c-808c-3a79fb1696f5", priority = 37, enabled = false)
+    @Test(description = "Closing a project is in the history with its status old and new", testName = "017244c9-1750-465c-808c-3a79fb1696f5", priority = 37)
     public void closingAProjectIsInTheHistoryWithItsStatusOldAndNew() {
-        throw new AssertionError("History has no route that reads a project's own lines over HTTP; Go's internal/projects tests prove it");
+        final @NotNull JsonPath started = approvedWith();
+        close(started.getString("id")).then().statusCode(200);
+        assertEquals(History.said(Api.asAdmin(), started.getString("id"), "?area=project").get(0), "closed project " + started.getString("name"));
     }
 }

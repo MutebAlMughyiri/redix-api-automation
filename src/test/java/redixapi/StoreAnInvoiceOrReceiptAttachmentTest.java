@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Files;
+import redix.support.History;
 import redix.support.People;
 import redix.support.Projects;
 import redix.support.Structure;
@@ -168,12 +169,12 @@ public class StoreAnInvoiceOrReceiptAttachmentTest {
 
     @Test(description = "Keeping a file is in the history", testName = "60677197-425f-4734-8b20-33d7f5d7df2a", priority = 14, enabled = false)
     public void keepingAFileIsInTheHistory() {
-        throw new AssertionError("History has no route that reads a file's lines over HTTP; Go's internal/attachments tests prove it");
+        throw new AssertionError("«سجل المشروع» shows a file kept through what it is attached to, never alone (UC-069 D4); Go's internal/attachments tests prove its History line is kept");
     }
 
     @Test(description = "Linking a document to a contract is in the history with which one", testName = "68dd7ab0-065c-41c1-9976-e0d1892568f6", priority = 15, enabled = false)
     public void linkingADocumentToAContractIsInTheHistoryWithWhichOne() {
-        throw new AssertionError("History has no route that reads a contract's lines over HTTP; Go's internal/contracts tests prove it");
+        throw new AssertionError("«سجل المشروع» shows a contract's document as the contract's change, not which document (UC-069 D4); Go's internal/contracts tests prove which one its History line keeps");
     }
 
     @Test(description = "A contract carries its document from when it is added", testName = "6210ff58-9af8-420a-9dd9-532577396da1", priority = 16)

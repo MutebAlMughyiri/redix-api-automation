@@ -12,6 +12,7 @@ import redix.support.Api;
 import redix.support.Contracts;
 import redix.support.Entries;
 import redix.support.Files;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -202,9 +203,14 @@ public class SubmitAnEntryForApprovalTest {
         refusedAs(submit(Api.asAdmin(), project, draft), 409, "projectFinished");
     }
 
-    @Test(description = "Sending is in the history and a refusal is not", testName = "2f4270e5-3675-4d58-b7c8-45d8fd13ed51", priority = 15, enabled = false)
+    @Test(description = "Sending is in the history and a refusal is not", testName = "2f4270e5-3675-4d58-b7c8-45d8fd13ed51", priority = 15)
     public void sendingIsInTheHistoryAndARefusalIsNot() {
-        throw new AssertionError("History has no route that reads an entry's own lines over HTTP; Go's internal/entries tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull String entry = recorded(Api.asAdmin(), project, purchase(project)).getString("id");
+        submit(field(project).asked(), project, entry).then().statusCode(403);
+        submit(Api.asAdmin(), project, entry).then().statusCode(200);
+        final @NotNull List<String> actions = History.of(Api.asAdmin(), project, "?area=entries").stream().map(line -> line.get("action").toString()).toList();
+        assertEquals(actions, List.of("sent", "drafted"));
     }
 
     @Test(description = "A kept entry has a number and the next one kept in the project has the next", testName = "7e6fac86-b872-49af-9f77-29ae68509c3a", priority = 16)

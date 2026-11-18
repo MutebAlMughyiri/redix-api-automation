@@ -8,6 +8,7 @@ import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -160,8 +161,11 @@ public class RegisterAProjectAndApproveItTest {
         throw new AssertionError("needs a server with a low REDIX_Registration__PermitsPerHour; the test server's is raised so the tests' registrations never meet it");
     }
 
-    @Test(description = "Every decision is in the history", testName = "199dd480-1a67-49ae-bf03-f94eb06dd4f8", priority = 13, enabled = false)
+    @Test(description = "Every decision is in the history", testName = "199dd480-1a67-49ae-bf03-f94eb06dd4f8", priority = 13)
     public void everyDecisionIsInTheHistory() {
-        throw new AssertionError("History has no route that reads a registration's lines over HTTP; Go's internal/projects tests prove it");
+        final @NotNull Registered registered = Projects.registered();
+        final @NotNull List<String> said = History.said(registered.asked(), registered.id(), "?area=project");
+        assertTrue(said.stream().anyMatch(line -> line.startsWith("registered project ")), said.toString());
+        assertTrue(said.stream().anyMatch(line -> line.startsWith("approved project ")), said.toString());
     }
 }

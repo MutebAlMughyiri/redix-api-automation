@@ -4,6 +4,7 @@
 package redixapi;
 
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.model.auth.ForgotPasswordRequest;
@@ -13,6 +14,7 @@ import redix.model.auth.ResetWithCodeRequest;
 import redix.model.auth.SignInResponse;
 import redix.support.Api;
 import redix.support.Emails;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -167,9 +169,14 @@ public class SignInWithUsernameAndPasswordTest {
         throw new AssertionError("about the database's migrations, inside the server; Go's internal/auth tests prove it");
     }
 
-    @Test(description = "A sign in is in the history with the user and the time", testName = "484ac12d-59e9-48da-8d0d-645c515d9df5", priority = 14, enabled = false)
+    @Test(description = "A sign in is in the history with the user and the time", testName = "484ac12d-59e9-48da-8d0d-645c515d9df5", priority = 14)
     public void aSignInIsInTheHistoryWithTheUserAndTheTime() {
-        throw new AssertionError("History has no route to read it over HTTP yet");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = People.in(project);
+        final @NotNull Map<String, Object> line = History.mine(person.asked()).get(0);
+        assertEquals(line.get("kind"), "signIn");
+        assertEquals(line.get("by"), History.nameOf(project, person.id()));
+        assertFalse(line.get("at").toString().isEmpty());
     }
 
     @Test(description = "A session says what its user holds everywhere", testName = "63740293-33e6-4379-85fc-8f7567e50178", priority = 15)
@@ -356,8 +363,16 @@ public class SignInWithUsernameAndPasswordTest {
         assertTrue(email.startsWith("To: " + person.email() + "\nSubject: "), email);
     }
 
-    @Test(description = "A reset is in the history by the person with no password hash", testName = "f4694e67-2d49-4188-bd45-b949b4655dcd", priority = 37, enabled = false)
+    @Test(description = "A reset is in the history by the person with no password hash", testName = "f4694e67-2d49-4188-bd45-b949b4655dcd", priority = 37)
     public void aResetIsInTheHistoryByThePersonWithNoPasswordHash() {
-        throw new AssertionError("History has no route to read it over HTTP yet");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = People.in(project);
+        reset(person.username(), codeFor(person), NEW_PASSWORD).then().statusCode(204);
+        final @NotNull RequestSpecification after = Api.as(People.signIn(person.username(), NEW_PASSWORD).accessToken());
+        final @NotNull Map<String, Object> line = History.mine(after).get(1);
+        assertEquals(line.get("kind"), "passwordReset");
+        assertEquals(line.get("by"), History.nameOf(project, person.id()));
+        final @NotNull String written = History.mineAsWritten(after);
+        assertFalse(written.contains("Hash") || written.contains(NEW_PASSWORD), written);
     }
 }

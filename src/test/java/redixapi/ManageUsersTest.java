@@ -10,6 +10,7 @@ import org.testng.annotations.Test;
 import redix.model.users.CreateUserRequest;
 import redix.support.Api;
 import redix.support.Emails;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -309,9 +310,17 @@ public class ManageUsersTest {
         membership(second, project, adminId, "enable").then().statusCode(200);
     }
 
-    @Test(description = "Making someone inactive and active again each write a history line by the manager", testName = "8ef2c7aa-f0e8-4582-940a-4fad784f49be", priority = 26, enabled = false)
+    @Test(description = "Making someone inactive and active again each write a history line by the manager", testName = "8ef2c7aa-f0e8-4582-940a-4fad784f49be", priority = 26)
     public void makingSomeoneInactiveAndActiveAgainEachWriteAHistoryLineByTheManager() {
-        throw new AssertionError("History has no route that reads a membership's lines over HTTP; Go's internal/users tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = People.in(project);
+        asAdmin(project, person.id(), "disable").then().statusCode(200);
+        asAdmin(project, person.id(), "enable").then().statusCode(200);
+        final @NotNull List<Map<String, Object>> lines = History.of(Api.asAdmin(), project, "?area=people");
+        final @NotNull String name = History.nameOf(project, person.id());
+        assertEquals(History.said(lines.get(0)), "enabled person " + name);
+        assertEquals(History.said(lines.get(1)), "disabled person " + name);
+        assertEquals(lines.get(0).get("by"), History.nameOf(project, People.admin().userId()));
     }
 
     @Test(description = "Doing it twice changes nothing", testName = "4762e336-0619-4ffc-b203-e871a8fdb3b9", priority = 27)
@@ -417,9 +426,14 @@ public class ManageUsersTest {
         refusedAs(given(manager.asked()).body(Map.of("displayName", "Taken", "mobile", "", "email", "taken@redix.test")).put("/users/" + adminId), 403, "otherProject");
     }
 
-    @Test(description = "Every change is in the history with no password hash", testName = "11e0f363-9a36-4ce7-9df4-2384a719cbb2", priority = 37, enabled = false)
+    @Test(description = "Every change is in the history with no password hash", testName = "11e0f363-9a36-4ce7-9df4-2384a719cbb2", priority = 37)
     public void everyChangeIsInTheHistoryWithNoPasswordHash() {
-        throw new AssertionError("History has no route that reads a login's lines over HTTP; Go's internal/users tests prove it");
+        final @NotNull Person person = People.in(Projects.approved());
+        edit(person.id(), "Renamed " + person.username(), "0511112222", person.email()).then().statusCode(200);
+        final @NotNull Map<String, Object> line = History.mine(person.asked()).get(0);
+        assertEquals(line.get("kind"), "changed");
+        assertTrue(line.get("about").toString().contains("Renamed " + person.username()), line.toString());
+        assertFalse(History.mineAsWritten(person.asked()).contains("Hash"));
     }
 
     @Test(description = "An answer never carries the password hash", testName = "06978b4d-0a83-44cb-9e98-caeb5a0aca8e", priority = 38)

@@ -9,14 +9,17 @@ import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.model.auth.SignInResponse;
 import redix.support.Api;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -95,8 +98,11 @@ public class KeepAPhoneWithFingerprintOrFaceSignedInTest {
         assertFalse(People.signIn(newcomer.username(), People.TEMPORARY).usesBiometrics());
     }
 
-    @Test(description = "Turning biometrics on and off is in history", testName = "0b45b195-52ec-4410-af6f-54ccda7ac05d", priority = 9, enabled = false)
+    @Test(description = "Turning biometrics on and off is in history", testName = "0b45b195-52ec-4410-af6f-54ccda7ac05d", priority = 9)
     public void turningBiometricsOnAndOffIsInHistory() {
-        throw new AssertionError("History has no route that reads a phone's lines over HTTP; Go's internal/auth tests prove it");
+        final @NotNull Person person = People.in(Projects.approved());
+        biometrics(person.token(), true);
+        biometrics(person.token(), false);
+        assertEquals(History.kindsOf(person.asked()).subList(0, 2), List.of("biometricsOff", "biometricsOn"));
     }
 }

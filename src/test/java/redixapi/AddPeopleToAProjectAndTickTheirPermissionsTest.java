@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.model.users.CreateUserRequest;
 import redix.support.Api;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -291,8 +292,15 @@ public class AddPeopleToAProjectAndTickTheirPermissionsTest {
         assertEquals(order.getLast(), amy.id());
     }
 
-    @Test(description = "Every permission change is in the history", testName = "f26caba8-21d3-41cb-b93a-f7faec753f0f", priority = 25, enabled = false)
+    @Test(description = "Every permission change is in the history", testName = "f26caba8-21d3-41cb-b93a-f7faec753f0f", priority = 25)
     public void everyPermissionChangeIsInTheHistory() {
-        throw new AssertionError("History has no route that reads a permission's lines over HTTP; Go's internal/users tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = People.in(project);
+        given(Api.asAdmin()).post("/projects/" + project + "/users/" + person.id() + "/permissions/approveEntries").then().statusCode(200);
+        given(Api.asAdmin()).delete("/projects/" + project + "/users/" + person.id() + "/permissions/approveEntries").then().statusCode(200);
+        final @NotNull List<Map<String, Object>> lines = History.of(Api.asAdmin(), project, "?area=people");
+        assertEquals(History.said(lines.get(0)), "taken permission approveEntries");
+        assertEquals(History.said(lines.get(1)), "given permission approveEntries");
+        assertEquals(lines.get(0).get("about"), History.nameOf(project, person.id()));
     }
 }

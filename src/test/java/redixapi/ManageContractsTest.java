@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
 import redix.support.Entries;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -282,9 +283,17 @@ public class ManageContractsTest {
         assertEquals(one(project, contract).getDouble("remaining"), 19000.0);
     }
 
-    @Test(description = "Every change of a contract is in the history", testName = "b97a2413-6aca-4b90-bcbd-1530e7a116b7", priority = 21, enabled = false)
+    @Test(description = "Every change of a contract is in the history", testName = "b97a2413-6aca-4b90-bcbd-1530e7a116b7", priority = 21)
     public void everyChangeOfAContractIsInTheHistory() {
-        throw new AssertionError("History has no route that reads a contract's lines over HTTP; Go's internal/contracts tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Map<String, Object> body = terms(project);
+        final @NotNull String contract = added(project, body);
+        body.put("value", 12000);
+        amend(project, contract, body).then().statusCode(200);
+        given(Api.asAdmin()).post(contracts(project) + "/" + contract + "/disable").then().statusCode(200);
+        final @NotNull List<String> actions = History.of(Api.asAdmin(), project, "?area=suppliers").stream().filter(line -> line.get("thing").equals("contract"))
+                .map(line -> line.get("action").toString()).toList();
+        assertEquals(actions, List.of("disabled", "changed", "created"));
     }
 
     @Test(description = "A disabled contract stays on the list and can be enabled", testName = "761320a9-8b3b-41bf-8edd-68f0d8f2dbcf", priority = 22)

@@ -12,6 +12,7 @@ import redix.support.Api;
 import redix.support.Contracts;
 import redix.support.Entries;
 import redix.support.Files;
+import redix.support.History;
 import redix.support.People;
 import redix.support.People.Person;
 import redix.support.Projects;
@@ -483,14 +484,23 @@ public class RecordAPurchaseExpenseTest {
         assertFalse(refused.asString().contains("Cement") || refused.asString().contains("\"number\""), refused.asString());
     }
 
-    @Test(description = "An expense is in the history with who and its total", testName = "d58fc9f3-4604-496e-a3f9-ad1e210fd319", priority = 41, enabled = false)
+    @Test(description = "An expense is in the history with who and its total", testName = "d58fc9f3-4604-496e-a3f9-ad1e210fd319", priority = 41)
     public void anExpenseIsInTheHistoryWithWhoAndItsTotal() {
-        throw new AssertionError("History has no route that reads an entry's own lines over HTTP; Go's internal/entries tests prove it");
+        final @NotNull String project = Projects.approved();
+        final @NotNull Map<String, Object> body = purchase(project);
+        body.put("submit", true);
+        final double total = record(project, body).then().statusCode(201).extract().jsonPath().getDouble("amount");
+        final @NotNull Map<String, Object> line = History.of(Api.asAdmin(), project, "?area=entries").get(0);
+        assertEquals(line.get("action"), "sent");
+        assertEquals(line.get("by"), History.nameOf(project, People.admin().userId()));
+        assertEquals(((Number) line.get("amount")).doubleValue(), total);
     }
 
-    @Test(description = "A draft is created in the history rather than submitted", testName = "414a92f8-a22a-465d-880d-0dca8cbbfe96", priority = 42, enabled = false)
+    @Test(description = "A draft is created in the history rather than submitted", testName = "414a92f8-a22a-465d-880d-0dca8cbbfe96", priority = 42)
     public void aDraftIsCreatedInTheHistoryRatherThanSubmitted() {
-        throw new AssertionError("History has no route that reads an entry's own lines over HTTP; Go's internal/entries tests prove it");
+        final @NotNull String project = Projects.approved();
+        record(project, purchase(project)).then().statusCode(201);
+        assertEquals(History.of(Api.asAdmin(), project, "?area=entries").get(0).get("action"), "drafted");
     }
 
     @Test(description = "The search puts what the caller used most first and then by name", testName = "f62a1980-9583-401d-8c1c-9180868c4371", priority = 43)
