@@ -5,13 +5,13 @@ package redix.support;
 
 import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
+import redix.model.auth.ChangePasswordRequest;
 import redix.model.auth.SignInResponse;
 import redix.model.users.CreateUserRequest;
 import redix.model.users.CreateUserResponse;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.restassured.RestAssured.given;
@@ -32,18 +32,29 @@ public final class People {
         }
     }
 
-    /** A person in projectId holding ReadProject and permissions, their temporary password already changed to PASSWORD, signed in. */
-    public static @NotNull Person in(final @NotNull String projectId, final @NotNull String... permissions) {
-        final @NotNull String tag = UUID.randomUUID().toString().substring(0, 8);
-        final @NotNull String temporary = "Temporary-passw0rd-1";
+    /** The temporary password the manager gives every person made here (UC-007), which they must change at their first sign-in (AC-02.1). */
+    public static final @NotNull String TEMPORARY = "Temporary-passw0rd-1";
+
+    /**
+     * A person made in projectId holding ReadProject and permissions, signed in with their temporary password, which is all such a session may
+     * change. Their username has letters and digits, so the password policy can only refuse one that is the username for being it.
+     */
+    public static @NotNull Person newcomer(final @NotNull String projectId, final @NotNull String... permissions) {
+        final @NotNull String tag = String.valueOf(ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999));
         final @NotNull CreateUserRequest request = CreateUserRequest.builder().displayName("Person " + tag).username("person" + tag)
                 .mobile("05" + ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999)).email("person" + tag + "@redix.test")
-                .temporaryPassword(temporary).permissions(List.of(permissions)).roleName("").partnerIds(List.of()).build();
+                .temporaryPassword(TEMPORARY).permissions(List.of(permissions)).roleName("").partnerIds(List.of()).build();
         final @NotNull String id = given(Api.asAdmin()).body(request).post("/projects/" + projectId + "/users").then().statusCode(201).extract()
                 .as(CreateUserResponse.class).id();
-        final @NotNull String first = signIn(request.getUsername(), temporary).accessToken();
-        given(Api.as(first)).body(Map.of("currentPassword", temporary, "newPassword", PASSWORD)).post("/auth/change-password").then().statusCode(200);
-        return new Person(id, request.getUsername(), request.getEmail(), signIn(request.getUsername(), PASSWORD).accessToken());
+        return new Person(id, request.getUsername(), request.getEmail(), signIn(request.getUsername(), TEMPORARY).accessToken());
+    }
+
+    /** A person in projectId holding ReadProject and permissions, their temporary password already changed to PASSWORD, signed in. */
+    public static @NotNull Person in(final @NotNull String projectId, final @NotNull String... permissions) {
+        final @NotNull Person newcomer = newcomer(projectId, permissions);
+        given(newcomer.asked()).body(ChangePasswordRequest.builder().currentPassword(TEMPORARY).newPassword(PASSWORD).build()).post("/auth/change-password")
+                .then().statusCode(200);
+        return new Person(newcomer.id(), newcomer.username(), newcomer.email(), signIn(newcomer.username(), PASSWORD).accessToken());
     }
 
     /** Signs username in with password, wanting 200. */

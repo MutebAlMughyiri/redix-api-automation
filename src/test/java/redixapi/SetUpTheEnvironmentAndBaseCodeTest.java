@@ -12,6 +12,7 @@ import redix.support.Api;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
@@ -48,10 +49,11 @@ public class SetUpTheEnvironmentAndBaseCodeTest {
         given(Api.anonymous()).header("If-None-Match", "\"OTHER\"").get("/translations/en").then().statusCode(200);
     }
 
-    @Test(description = "Swagger is served outside production only", testName = "3fbddb79-8d93-41f7-a53b-3b970104e668", priority = 5, enabled = false)
+    @Test(description = "Swagger is served outside production only", testName = "3fbddb79-8d93-41f7-a53b-3b970104e668", priority = 5)
     public void swaggerIsServedOutsideProductionOnly() {
-        given(Api.anonymous()).get("/swagger").then().statusCode(200);
-        given(Api.anonymous()).get("/openapi/v1.json").then().statusCode(200).contentType(ContentType.JSON);
+        given(Api.anonymous()).get("/swagger").then().statusCode(200).contentType(ContentType.HTML).body(containsString("/openapi/v1.json"));
+        given(Api.anonymous()).get("/openapi/v1.json").then().statusCode(200).contentType(ContentType.JSON).body("openapi", equalTo("3.1.0"))
+                .body("paths.'/health'.get.summary", startsWith("Healthy"));
     }
 
     private static @NotNull Map<String, String> bundle(final @NotNull String language) {
