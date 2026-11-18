@@ -33,16 +33,16 @@ public class SetUpTheEnvironmentAndBaseCodeTest {
         assertEquals(english.get("permissions.reportsGroup"), "Reports");
     }
 
-    @Test(description = "Unchanged bundle answers not modified", testName = "977af17b-832e-477d-a8fe-ae1de08c613a", priority = 3)
+    @Test(description = "Unknown language is not found", testName = "ce439b6c-dc2c-47e0-b71b-586ca8493608", priority = 3)
+    public void unknownLanguageIsNotFound() {
+        given(Api.anonymous()).get("/translations/fr").then().statusCode(404).contentType("application/problem+json");
+    }
+
+    @Test(description = "Unchanged bundle answers not modified", testName = "977af17b-832e-477d-a8fe-ae1de08c613a", priority = 4)
     public void unchangedBundleAnswersNotModified() {
         final @NotNull String etag = given(Api.anonymous()).get("/translations/en").then().statusCode(200).extract().header("ETag");
         given(Api.anonymous()).header("If-None-Match", etag).get("/translations/en").then().statusCode(304).body(emptyString());
         given(Api.anonymous()).header("If-None-Match", "\"OTHER\"").get("/translations/en").then().statusCode(200);
-    }
-
-    @Test(description = "Unknown language is not found", testName = "ce439b6c-dc2c-47e0-b71b-586ca8493608", priority = 4)
-    public void unknownLanguageIsNotFound() {
-        given(Api.anonymous()).get("/translations/fr").then().statusCode(404).contentType("application/problem+json");
     }
 
     @Test(description = "Swagger is served outside production only", testName = "3fbddb79-8d93-41f7-a53b-3b970104e668", priority = 5, enabled = false)
