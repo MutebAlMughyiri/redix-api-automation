@@ -1,0 +1,28 @@
+package redix.support;
+
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * The REDIX API every test calls: its address, the JSON it speaks, and who calls it. Every request and its answer are written into the
+ * test's page of the report.
+ */
+public final class Api {
+    /** The API's address: REDIX_API_URL, or the Dev server on this machine, never qa. */
+    public static final @NotNull String URL = System.getenv().getOrDefault("REDIX_API_URL", "http://127.0.0.1:5010");
+
+    private Api() {
+    }
+
+    /** A request as nobody: signing in, registering a project, the public routes. */
+    public static @NotNull RequestSpecification anonymous() {
+        return new RequestSpecBuilder().setBaseUri(URL).setContentType(ContentType.JSON).addFilter(new Report.Exchange()).build();
+    }
+
+    /** A request as the admin, signed in once for the whole run. */
+    public static @NotNull RequestSpecification asAdmin() {
+        return new RequestSpecBuilder().addRequestSpecification(anonymous()).addHeader("Authorization", "Bearer " + Admin.token()).build();
+    }
+}
