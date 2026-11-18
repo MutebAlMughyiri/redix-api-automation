@@ -4,10 +4,12 @@
 package redix.support;
 
 import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,7 +32,12 @@ public final class Entries {
 
     /** A purchase the admin recorded into one table of an item and kept as a draft. */
     public static @NotNull String draftIn(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String tableId) {
-        return record(projectId, Api.asAdmin(), false, itemId, tableId);
+        return draftIn(projectId, itemId, tableId, Map.of()).then().statusCode(201).extract().path("id");
+    }
+
+    /** What recording a purchase into one table of an item answers, its columns' values beside unit price and quantity those columns names. */
+    public static @NotNull Response draftIn(final @NotNull String projectId, final @NotNull String itemId, final @NotNull String tableId, final @NotNull Map<String, Object> columns) {
+        return send(projectId, Api.asAdmin(), false, itemId, tableId, columns);
     }
 
     /** A purchase the admin recorded and sent for approval (UC-028). */
@@ -54,10 +61,10 @@ public final class Entries {
 
     private static @NotNull String record(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit) {
         final @NotNull JsonPath tables = given(Api.asAdmin()).get("/projects/" + projectId + "/entry-tables").then().statusCode(200).extract().jsonPath();
-        return record(projectId, recordedBy, submit, tables.getString("[0].items[0].id"), tables.getString("[0].items[0].tables[0].id"));
+        return send(projectId, recordedBy, submit, tables.getString("[0].items[0].id"), tables.getString("[0].items[0].tables[0].id"), Map.of()).then().statusCode(201).extract().path("id");
     }
 
-    private static @NotNull String record(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit, final @NotNull String itemId, final @NotNull String tableId) {
+    private static @NotNull Response send(final @NotNull String projectId, final @NotNull RequestSpecification recordedBy, final boolean submit, final @NotNull String itemId, final @NotNull String tableId, final @NotNull Map<String, Object> columns) {
         final @NotNull String project = "/projects/" + projectId;
         final @NotNull JsonPath accounts = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().jsonPath();
         if (accounts.getList("$").isEmpty()) {
@@ -65,11 +72,9 @@ public final class Entries {
         }
         final @NotNull String accountId = given(Api.asAdmin()).get(project + "/accounts").then().statusCode(200).extract().path("[0].id");
         final @NotNull String paymentMethodId = given(Api.asAdmin()).get(project + "/payment-methods").then().statusCode(200).extract().path("[0].id");
-        final @NotNull String entryId = UUID.randomUUID().toString();
-        given(recordedBy).body(Map.of("id", entryId, "tableId", tableId, "itemId", itemId,
-                        "paymentMethodId", paymentMethodId, "accountId", accountId, "date", LocalDate.now().toString(), "description", "Cement",
-                        "columnValues", Map.of("unitPrice", "100", "quantity", "2"), "submit", submit))
-                .post(project + "/entries").then().statusCode(201);
-        return entryId;
+        final @NotNull Map<String, Object> values = new HashMap<>(Map.of("unitPrice", "100", "quantity", "2"));
+        values.putAll(columns);
+        return given(recordedBy).body(Map.of("id", UUID.randomUUID().toString(), "tableId", tableId, "itemId", itemId, "paymentMethodId", paymentMethodId, "accountId", accountId,
+                "date", LocalDate.now().toString(), "description", "Cement", "columnValues", values, "submit", submit)).post(project + "/entries");
     }
 }
