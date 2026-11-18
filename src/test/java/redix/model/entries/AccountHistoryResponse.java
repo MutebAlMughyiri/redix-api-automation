@@ -1,5 +1,7 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record AccountHistoryResponse(
         Integer id,
 
@@ -13,7 +15,7 @@ public record AccountHistoryResponse(
 
         String otherAccount,
 
-        Double amount,
+        BigDecimal amount,
 
         String entryKind,
 

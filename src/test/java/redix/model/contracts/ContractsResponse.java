@@ -1,5 +1,6 @@
 package redix.model.contracts;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record ContractsResponse(
@@ -11,21 +12,21 @@ public record ContractsResponse(
 
         String itemName,
 
-        Double value,
+        BigDecimal value,
 
         Boolean isOpenValue,
 
-        Double unitPrice,
+        BigDecimal unitPrice,
 
-        Double quantity,
+        BigDecimal quantity,
 
         String notes,
 
-        Double paid,
+        BigDecimal paid,
 
-        Double pending,
+        BigDecimal pending,
 
-        Double remaining,
+        BigDecimal remaining,
 
         Boolean isOverrun,
 

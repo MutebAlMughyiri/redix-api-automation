@@ -1,5 +1,7 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record AttachableEntriesResponse(
         String id,
 
@@ -13,7 +15,7 @@ public record AttachableEntriesResponse(
 
         String entryDate,
 
-        Double amount,
+        BigDecimal amount,
 
         String itemName,
 
@@ -35,5 +37,5 @@ public record AttachableEntriesResponse(
 
         String paymentMethodName,
 
-        Double accountShortBy) {
+        BigDecimal accountShortBy) {
 }

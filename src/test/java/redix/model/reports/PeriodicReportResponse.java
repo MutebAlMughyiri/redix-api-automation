@@ -1,5 +1,6 @@
 package redix.model.reports;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record PeriodicReportResponse(
@@ -9,35 +10,35 @@ public record PeriodicReportResponse(
 
         String issuedAt,
 
-        Double previousExpenses,
+        BigDecimal previousExpenses,
 
-        Double expenses,
+        BigDecimal expenses,
 
-        Double capital,
+        BigDecimal capital,
 
-        Double vatRefunds,
+        BigDecimal vatRefunds,
 
-        Double sales,
+        BigDecimal sales,
 
-        Double otherRevenue,
+        BigDecimal otherRevenue,
 
-        Double surplus,
+        BigDecimal surplus,
 
-        Double surplusWithoutSales,
+        BigDecimal surplusWithoutSales,
 
         List<CategoriesItem> categories,
 
         List<AccountsItem> accounts,
 
-        Double accountsTotal,
+        BigDecimal accountsTotal,
 
-        Double reconciliationDifference,
+        BigDecimal reconciliationDifference,
 
         Integer pendingCount,
 
-        Double pendingAmount,
+        BigDecimal pendingAmount,
 
-        Double capitalTotal,
+        BigDecimal capitalTotal,
 
         List<PartnersItem> partners,
 
@@ -47,20 +48,20 @@ public record PeriodicReportResponse(
 
         Integer pendingRevenueCount,
 
-        Double pendingRevenueAmount,
+        BigDecimal pendingRevenueAmount,
 
-        Double expensesDifference,
+        BigDecimal expensesDifference,
 
-        Double revenue,
+        BigDecimal revenue,
 
-        Double revenueWithoutSales) {
+        BigDecimal revenueWithoutSales) {
 
     public record CategoriesItem(
             String id,
 
             String name,
 
-            Double total,
+            BigDecimal total,
 
             List<ItemsItem> items) {
 
@@ -69,7 +70,7 @@ public record PeriodicReportResponse(
 
                 String name,
 
-                Double total,
+                BigDecimal total,
 
                 String type) {
         }
@@ -80,7 +81,7 @@ public record PeriodicReportResponse(
 
             String type,
 
-            Double balance) {
+            BigDecimal balance) {
     }
 
     public record PartnersItem(
@@ -88,9 +89,9 @@ public record PeriodicReportResponse(
 
             String id,
 
-            Double balance,
+            BigDecimal balance,
 
-            Double sharePercent) {
+            BigDecimal sharePercent) {
     }
 
     public record ItemsItem(
@@ -100,7 +101,7 @@ public record PeriodicReportResponse(
 
             String categoryName,
 
-            Double total,
+            BigDecimal total,
 
             List<SubgroupsItem> subgroups,
 
@@ -117,7 +118,7 @@ public record PeriodicReportResponse(
 
                 String name,
 
-                Double total,
+                BigDecimal total,
 
                 List<RowsItem> rows,
 
@@ -132,7 +133,7 @@ public record PeriodicReportResponse(
 
                     String date,
 
-                    Double amount,
+                    BigDecimal amount,
 
                     Boolean isOutsideContract,
 
@@ -167,17 +168,17 @@ public record PeriodicReportResponse(
 
                 String contractorName,
 
-                Double value,
+                BigDecimal value,
 
                 Boolean isOpenValue,
 
-                Double paid,
+                BigDecimal paid,
 
-                Double remaining,
+                BigDecimal remaining,
 
                 Boolean isOverrun,
 
-                Double paymentsTotal,
+                BigDecimal paymentsTotal,
 
                 List<PaymentsItem> payments,
 
@@ -192,7 +193,7 @@ public record PeriodicReportResponse(
 
                     String date,
 
-                    Double amount,
+                    BigDecimal amount,
 
                     Boolean isOutsideContract,
 
@@ -228,7 +229,7 @@ public record PeriodicReportResponse(
 
             String name,
 
-            Double total,
+            BigDecimal total,
 
             List<ItemsItem> items) {
 
@@ -237,7 +238,7 @@ public record PeriodicReportResponse(
 
                 String name,
 
-                Double total,
+                BigDecimal total,
 
                 String type) {
         }

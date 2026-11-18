@@ -1,5 +1,6 @@
 package redix.model.partners;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record PartnersResponse(
@@ -20,6 +21,6 @@ public record PartnersResponse(
     public record MyDraftsItem(
             String entryDate,
 
-            Double amount) {
+            BigDecimal amount) {
     }
 }

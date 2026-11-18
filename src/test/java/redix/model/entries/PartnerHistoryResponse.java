@@ -1,5 +1,7 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record PartnerHistoryResponse(
         Integer id,
 
@@ -13,7 +15,7 @@ public record PartnerHistoryResponse(
 
         String account,
 
-        Double amount,
+        BigDecimal amount,
 
         String nameWas,
 

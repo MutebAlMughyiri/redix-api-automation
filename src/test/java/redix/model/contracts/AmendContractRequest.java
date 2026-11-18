@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -14,13 +15,13 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 public class AmendContractRequest {
-    private Double value;
+    private BigDecimal value;
 
     private Boolean isOpenValue;
 
-    private Double unitPrice;
+    private BigDecimal unitPrice;
 
-    private Double quantity;
+    private BigDecimal quantity;
 
     private String notes;
 

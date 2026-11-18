@@ -1,17 +1,19 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record RecordEntryResponse(
         String id,
 
         String status,
 
-        Double amount,
+        BigDecimal amount,
 
-        Double paid,
+        BigDecimal paid,
 
-        Double pending,
+        BigDecimal pending,
 
-        Double remainingAfter,
+        BigDecimal remainingAfter,
 
         Boolean isOverrun,
 

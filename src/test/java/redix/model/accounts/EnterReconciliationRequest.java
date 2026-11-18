@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -24,6 +25,6 @@ public class EnterReconciliationRequest {
     public static class BalancesItem {
         private String accountId;
 
-        private Double actualBalance;
+        private BigDecimal actualBalance;
     }
 }

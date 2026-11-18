@@ -1,5 +1,7 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record ApprovalHistoryResponse(
         Integer id,
 
@@ -13,7 +15,7 @@ public record ApprovalHistoryResponse(
 
         String party,
 
-        Double amount,
+        BigDecimal amount,
 
         String reason) {
 }

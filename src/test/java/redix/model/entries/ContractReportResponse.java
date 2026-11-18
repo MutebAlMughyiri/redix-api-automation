@@ -1,5 +1,6 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record ContractReportResponse(
@@ -9,7 +10,7 @@ public record ContractReportResponse(
 
         String categoryName,
 
-        Double total,
+        BigDecimal total,
 
         List<SubgroupsItem> subgroups,
 
@@ -26,7 +27,7 @@ public record ContractReportResponse(
 
             String name,
 
-            Double total,
+            BigDecimal total,
 
             List<RowsItem> rows,
 
@@ -41,7 +42,7 @@ public record ContractReportResponse(
 
                 String date,
 
-                Double amount,
+                BigDecimal amount,
 
                 Boolean isOutsideContract,
 
@@ -76,17 +77,17 @@ public record ContractReportResponse(
 
             String contractorName,
 
-            Double value,
+            BigDecimal value,
 
             Boolean isOpenValue,
 
-            Double paid,
+            BigDecimal paid,
 
-            Double remaining,
+            BigDecimal remaining,
 
             Boolean isOverrun,
 
-            Double paymentsTotal,
+            BigDecimal paymentsTotal,
 
             List<PaymentsItem> payments,
 
@@ -101,7 +102,7 @@ public record ContractReportResponse(
 
                 String date,
 
-                Double amount,
+                BigDecimal amount,
 
                 Boolean isOutsideContract,
 

@@ -1,21 +1,22 @@
 package redix.model.reports;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record SummaryResponse(
-        Double revenue,
+        BigDecimal revenue,
 
-        Double expenses,
+        BigDecimal expenses,
 
-        Double surplus,
+        BigDecimal surplus,
 
         Boolean wasReconciled,
 
-        Double reconciliationDifference,
+        BigDecimal reconciliationDifference,
 
         Waiting waiting,
 
-        Double completionPercent,
+        BigDecimal completionPercent,
 
         List<CategoriesItem> categories,
 
@@ -24,11 +25,11 @@ public record SummaryResponse(
     public record Waiting(
             Integer expensesCount,
 
-            Double expensesAmount,
+            BigDecimal expensesAmount,
 
             Integer revenueCount,
 
-            Double revenueAmount) {
+            BigDecimal revenueAmount) {
     }
 
     public record CategoriesItem(
@@ -36,7 +37,7 @@ public record SummaryResponse(
 
             String name,
 
-            Double total,
+            BigDecimal total,
 
             List<ItemsItem> items) {
 
@@ -45,7 +46,7 @@ public record SummaryResponse(
 
                 String name,
 
-                Double total,
+                BigDecimal total,
 
                 String type) {
         }
@@ -56,7 +57,7 @@ public record SummaryResponse(
 
             String name,
 
-            Double total,
+            BigDecimal total,
 
             List<ItemsItem> items) {
 
@@ -65,7 +66,7 @@ public record SummaryResponse(
 
                 String name,
 
-                Double total,
+                BigDecimal total,
 
                 String type) {
         }

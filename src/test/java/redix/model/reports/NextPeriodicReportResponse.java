@@ -1,5 +1,7 @@
 package redix.model.reports;
 
+import java.math.BigDecimal;
+
 public record NextPeriodicReportResponse(
         Integer number,
 
@@ -8,10 +10,10 @@ public record NextPeriodicReportResponse(
     public record Waiting(
             Integer expensesCount,
 
-            Double expensesAmount,
+            BigDecimal expensesAmount,
 
             Integer revenueCount,
 
-            Double revenueAmount) {
+            BigDecimal revenueAmount) {
     }
 }

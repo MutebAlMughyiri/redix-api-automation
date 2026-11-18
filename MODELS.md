@@ -6,7 +6,7 @@ exactly as the dialog would make it: the request a Lombok class to build, the re
 
 | Where the JSON came from | What was taken from the Go API's own types |
 | --- | --- |
-| Every request .NET's tests sent (redix-api `testdata/golden`, recorded 16 Nov 2026), and Go's own answer to each, from replaying them; the time zone routes from a Dev server | A money field (`fixed.Number`, `Total`, `Written` in Go) is a `Double` even when every sample was whole; `columnValues` is a `Map<String, String>` and a sync's `lists` a `Map<String, Object>`; a payment method's `accountIds`, which no recorded request sent |
+| Every request .NET's tests sent (redix-api `testdata/golden`, recorded 16 Nov 2026), and Go's own answer to each, from replaying them; the time zone routes from a Dev server | A money field (`fixed.Number`, `Total`, `Written` in Go) is a `BigDecimal`, exact to its four decimals (BR-13), never a `Double`, which cannot hold 0.10 exactly; `columnValues` is a `Map<String, String>` and a sync's `lists` a `Map<String, Object>`; a payment method's `accountIds`, which no recorded request sent |
 
 Every refusal the API answers is `application/problem+json`, read as `redix.model.ProblemResponse`.
 

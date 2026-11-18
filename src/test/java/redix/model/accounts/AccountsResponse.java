@@ -1,5 +1,7 @@
 package redix.model.accounts;
 
+import java.math.BigDecimal;
+
 public record AccountsResponse(
         String id,
 
@@ -7,7 +9,7 @@ public record AccountsResponse(
 
         String name,
 
-        Double balance,
+        BigDecimal balance,
 
         String custodianId,
 

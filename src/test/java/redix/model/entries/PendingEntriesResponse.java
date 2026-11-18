@@ -1,5 +1,7 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
+
 public record PendingEntriesResponse(
         String id,
 
@@ -9,7 +11,7 @@ public record PendingEntriesResponse(
 
         String entryDate,
 
-        Double amount,
+        BigDecimal amount,
 
         String itemName,
 
@@ -31,9 +33,9 @@ public record PendingEntriesResponse(
 
         String partnerName,
 
-        Double accountBalance,
+        BigDecimal accountBalance,
 
-        Double accountWaiting,
+        BigDecimal accountWaiting,
 
-        Double accountShortBy) {
+        BigDecimal accountShortBy) {
 }

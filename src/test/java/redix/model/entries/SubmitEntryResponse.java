@@ -1,5 +1,6 @@
 package redix.model.entries;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ public record SubmitEntryResponse(
 
             String entryDate,
 
-            Double amount,
+            BigDecimal amount,
 
             String accountId,
 

@@ -1,15 +1,16 @@
 package redix.model.accounts;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record LatestReconciliationResponse(
         String at,
 
-        Double surplus,
+        BigDecimal surplus,
 
-        Double actualTotal,
+        BigDecimal actualTotal,
 
-        Double difference,
+        BigDecimal difference,
 
         List<BalancesItem> balances) {
 
@@ -20,9 +21,9 @@ public record LatestReconciliationResponse(
 
             String type,
 
-            Double booksBalance,
+            BigDecimal booksBalance,
 
-            Double actualBalance,
+            BigDecimal actualBalance,
 
             Boolean wasChecked) {
     }

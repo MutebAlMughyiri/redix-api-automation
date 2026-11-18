@@ -1,5 +1,7 @@
 package redix.model.partners;
 
+import java.math.BigDecimal;
+
 public record PartnerMovementsResponse(
         String id,
 
@@ -7,7 +9,7 @@ public record PartnerMovementsResponse(
 
         String date,
 
-        Double amount,
+        BigDecimal amount,
 
         String description,
 
