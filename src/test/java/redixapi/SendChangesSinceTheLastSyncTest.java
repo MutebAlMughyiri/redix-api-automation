@@ -93,7 +93,7 @@ public class SendChangesSinceTheLastSyncTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person field = People.in(project, "recordEntries");
         given(Api.asAdmin()).body(Map.of("type", "cashCustody", "name", "Site cash", "custodianId", field.id())).post("/projects/" + project + "/accounts").then().statusCode(200);
-        given(Api.asAdmin()).body(Map.of("type", "bank", "name", "Al Rajhi")).post("/projects/" + project + "/accounts").then().statusCode(200);
+        given(Api.asAdmin()).body(Map.of("type", "bank", "name", "Bank A")).post("/projects/" + project + "/accounts").then().statusCode(200);
         final @NotNull JsonPath synced = sync(field.asked(), project, "");
         assertEquals(synced.getList("lists.'/projects/" + project + "/accounts/offered'.name"), List.of("Site cash"));
     }

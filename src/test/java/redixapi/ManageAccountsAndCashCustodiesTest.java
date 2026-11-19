@@ -68,8 +68,8 @@ public class ManageAccountsAndCashCustodiesTest {
     @Test(description = "Finance adds a bank account with its opening balance", testName = "60b84ca4-2ff6-47d7-a5f6-e8e9dff7757e", priority = 1)
     public void financeAddsABankAccountWithItsOpeningBalance() {
         final @NotNull String project = Projects.approved();
-        add(project, "bank", "  Al Rajhi  ", "").then().statusCode(200);
-        final @NotNull JsonPath bank = listed(project).setRootPath("find { it.name == 'Al Rajhi' }");
+        add(project, "bank", "  Bank A  ", "").then().statusCode(200);
+        final @NotNull JsonPath bank = listed(project).setRootPath("find { it.name == 'Bank A' }");
         assertEquals(bank.getString("type"), "bank");
         assertEquals(bank.getInt("balance"), 0, "an account holds nothing until money moves into it");
         assertEquals(bank.getString("custodianId"), "");
@@ -91,8 +91,8 @@ public class ManageAccountsAndCashCustodiesTest {
     public void aBankAccountMayHaveACustodian() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person custodian = People.in(project);
-        added(project, "bank", "Al Rajhi", custodian.id());
-        assertEquals(listed(project).getString("find { it.name == 'Al Rajhi' }.custodianId"), custodian.id());
+        added(project, "bank", "Bank A", custodian.id());
+        assertEquals(listed(project).getString("find { it.name == 'Bank A' }.custodianId"), custodian.id());
     }
 
     @Test(description = "An overdrawn account may open below zero", testName = "8f840cad-c9ce-4e22-be72-1405d7f98e4c", priority = 4, enabled = false)
@@ -120,8 +120,8 @@ public class ManageAccountsAndCashCustodiesTest {
     public void aCustodianMustBeInTheProject() {
         final @NotNull String project = Projects.approved();
         refusedAs(add(project, "cashCustody", "Site cash", People.in(Projects.approved()).id()), 400, "unknownCustodian");
-        final @NotNull String bank = added(project, "bank", "Al Rajhi", "");
-        refusedAs(edit(project, bank, "Al Rajhi", People.in(Projects.approved()).id()), 400, "unknownCustodian");
+        final @NotNull String bank = added(project, "bank", "Bank A", "");
+        refusedAs(edit(project, bank, "Bank A", People.in(Projects.approved()).id()), 400, "unknownCustodian");
     }
 
     @Test(description = "An account needs a name of at most100 characters", testName = "5d22d102-34db-40d8-bf77-15c9a9c3db56", priority = 8)
@@ -146,10 +146,10 @@ public class ManageAccountsAndCashCustodiesTest {
     @Test(description = "An edit can leave a bank account with nobody", testName = "e5c90d3b-fb51-4f56-8972-dcb1001fea87", priority = 11)
     public void anEditCanLeaveABankAccountWithNobody() {
         final @NotNull String project = Projects.approved();
-        final @NotNull String bank = added(project, "bank", "Al Rajhi", People.in(project).id());
-        edit(project, bank, "Al Rajhi Main", "").then().statusCode(200);
+        final @NotNull String bank = added(project, "bank", "Bank A", People.in(project).id());
+        edit(project, bank, "Bank A Main", "").then().statusCode(200);
         final @NotNull JsonPath edited = listed(project).setRootPath("find { it.id == '" + bank + "' }");
-        assertEquals(edited.getString("name"), "Al Rajhi Main");
+        assertEquals(edited.getString("name"), "Bank A Main");
         assertEquals(edited.getString("custodianId"), "");
         assertEquals(edited.getString("type"), "bank");
     }
@@ -177,9 +177,9 @@ public class ManageAccountsAndCashCustodiesTest {
     public void aDisabledAccountLeavesEntryAndStaysOnTheList() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person finance = People.in(project, "recordEntries", "chargeAnyAccount");
-        final @NotNull String bank = added(project, "bank", "Al Rajhi", "");
+        final @NotNull String bank = added(project, "bank", "Bank A", "");
         given(Api.asAdmin()).post(accounts(project) + "/" + bank + "/disable").then().statusCode(200);
-        assertFalse(offeredTo(finance, project).contains("Al Rajhi"));
+        assertFalse(offeredTo(finance, project).contains("Bank A"));
         assertEquals(listed(project).getString("find { it.id == '" + bank + "' }.isActive"), "false");
     }
 
@@ -187,10 +187,10 @@ public class ManageAccountsAndCashCustodiesTest {
     public void enablingBringsAnAccountBackIntoEntry() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person finance = People.in(project, "recordEntries", "chargeAnyAccount");
-        final @NotNull String bank = added(project, "bank", "Al Rajhi", "");
+        final @NotNull String bank = added(project, "bank", "Bank A", "");
         given(Api.asAdmin()).post(accounts(project) + "/" + bank + "/disable").then().statusCode(200);
         given(Api.asAdmin()).post(accounts(project) + "/" + bank + "/enable").then().statusCode(200);
-        assertTrue(offeredTo(finance, project).contains("Al Rajhi"));
+        assertTrue(offeredTo(finance, project).contains("Bank A"));
     }
 
     @Test(description = "Banks come first then in the order they were added", testName = "fbe62904-c704-4887-930e-a7f1e29cbfe4", priority = 17)
@@ -209,11 +209,11 @@ public class ManageAccountsAndCashCustodiesTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person custodian = People.in(project, "recordEntries");
         final @NotNull String custody = added(project, "cashCustody", "Site cash", custodian.id());
-        added(project, "bank", "Al Rajhi", "");
+        added(project, "bank", "Bank A", "");
         final @NotNull JsonPath seen = given(custodian.asked()).get(accounts(project)).then().statusCode(200).extract().jsonPath();
-        assertEquals(seen.getList("name"), List.of("Al Rajhi", "Site cash"));
+        assertEquals(seen.getList("name"), List.of("Bank A", "Site cash"));
         assertTrue(seen.getBoolean("find { it.id == '" + custody + "' }.isMine"));
-        assertFalse(seen.getBoolean("find { it.name == 'Al Rajhi' }.isMine"));
+        assertFalse(seen.getBoolean("find { it.name == 'Bank A' }.isMine"));
         given(custodian.asked()).body(Map.of("name", "Mine")).put(accounts(project) + "/" + custody).then().statusCode(403);
         given(custodian.asked()).post(accounts(project) + "/" + custody + "/disable").then().statusCode(403);
     }
@@ -223,14 +223,14 @@ public class ManageAccountsAndCashCustodiesTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person field = People.in(project, "recordEntries");
         added(project, "cashCustody", "Site cash", field.id());
-        added(project, "bank", "Al Rajhi", "");
+        added(project, "bank", "Bank A", "");
         assertEquals(offeredTo(field, project), List.of("Site cash"));
     }
 
     @Test(description = "Field holding nothing is offered nothing", testName = "b8bf4cc2-a8d3-4a70-afc6-1c9d843c578e", priority = 20)
     public void fieldHoldingNothingIsOfferedNothing() {
         final @NotNull String project = Projects.approved();
-        added(project, "bank", "Al Rajhi", "");
+        added(project, "bank", "Bank A", "");
         assertEquals(offeredTo(People.in(project, "recordEntries"), project), List.of());
     }
 
@@ -248,10 +248,10 @@ public class ManageAccountsAndCashCustodiesTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person finance = People.in(project, "recordEntries", "chargeAnyAccount");
         added(project, "cashCustody", "Site cash", People.in(project).id());
-        added(project, "bank", "Al Rajhi", "");
+        added(project, "bank", "Bank A", "");
         final @NotNull String gone = added(project, "bank", "Closed bank", "");
         given(Api.asAdmin()).post(accounts(project) + "/" + gone + "/disable").then().statusCode(200);
-        assertEquals(offeredTo(finance, project), List.of("Al Rajhi", "Site cash"));
+        assertEquals(offeredTo(finance, project), List.of("Bank A", "Site cash"));
     }
 
     @Test(description = "One projects accounts are never anothers", testName = "9c1ef0bd-e29c-4e11-803a-58332f6291a2", priority = 23)
@@ -269,21 +269,21 @@ public class ManageAccountsAndCashCustodiesTest {
     @Test(description = "A finished project refuses every change and stays readable", testName = "3a7e588e-7b29-4326-ab78-ab2ddafab341", priority = 24)
     public void aFinishedProjectRefusesEveryChangeAndStaysReadable() {
         final @NotNull String project = Projects.approved();
-        final @NotNull String bank = added(project, "bank", "Al Rajhi", "");
+        final @NotNull String bank = added(project, "bank", "Bank A", "");
         given(Api.asAdmin()).post("/projects/" + project + "/close").then().statusCode(200);
         refusedAs(add(project, "bank", "Second bank", ""), 409, "projectFinished");
         refusedAs(edit(project, bank, "Renamed", ""), 409, "projectFinished");
         refusedAs(given(Api.asAdmin()).post(accounts(project) + "/" + bank + "/disable"), 409, "projectFinished");
         refusedAs(given(Api.asAdmin()).delete(accounts(project) + "/" + bank), 409, "projectFinished");
-        assertEquals(listed(project).getList("name"), List.of("Al Rajhi"));
+        assertEquals(listed(project).getList("name"), List.of("Bank A"));
     }
 
     @Test(description = "Everyone with access reads accounts and only finance changes them", testName = "c7fd4902-89ef-46b6-a78e-d4278a70d8ef", priority = 25)
     public void everyoneWithAccessReadsAccountsAndOnlyFinanceChangesThem() {
         final @NotNull String project = Projects.approved();
-        added(project, "bank", "Al Rajhi", "");
+        added(project, "bank", "Bank A", "");
         final @NotNull Person reader = People.in(project);
-        given(reader.asked()).get(accounts(project)).then().statusCode(200).body("name", equalTo(List.of("Al Rajhi")));
+        given(reader.asked()).get(accounts(project)).then().statusCode(200).body("name", equalTo(List.of("Bank A")));
         given(reader.asked()).body(Map.of("type", "bank", "name", "Mine")).post(accounts(project)).then().statusCode(403);
         given(People.in(project, "manageSettings").asked()).body(Map.of("type", "bank", "name", "Ours")).post(accounts(project)).then().statusCode(200);
         given(People.in(Projects.approved()).asked()).get(accounts(project)).then().statusCode(403);
