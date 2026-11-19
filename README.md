@@ -16,8 +16,8 @@ project in IntelliJ with Testin lands on that test project.
 | The steps | The method's body, which the tester writes |
 | An API call's request and answer | Two types from Testin's **New → Testin API Model from JSON**: the request a Lombok class, the answer a record |
 
-The request and response of every route are in `redix.model`, one package per package of the Go API, written by Testin's own API Model
-writer from Go's answers: [MODELS.md](MODELS.md) lists each route with its models.
+A request or an answer a test builds or reads as an object is a model in `redix.model`: one Java type per Go type, named as the API's OpenAPI
+document names it, in the package of the Go package that owns it. [MODELS.md](MODELS.md) lists them.
 
 A body uses `redix.support.Api`:
 

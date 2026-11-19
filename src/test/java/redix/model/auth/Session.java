@@ -5,7 +5,8 @@ package redix.model.auth;
 
 import java.util.List;
 
-public record ChangePasswordResponse(
+/** What signing in, refreshing the session and changing the password answer: the API's auth.session, one record for the three (findings row 272). */
+public record Session(
         String accessToken,
 
         String accessTokenExpiresAt,

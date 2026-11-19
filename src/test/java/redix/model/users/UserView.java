@@ -5,7 +5,8 @@ package redix.model.users;
 
 import java.util.List;
 
-public record ResetUserPasswordResponse(
+/** A person as the API answers them: its users.userView (findings row 272). */
+public record UserView(
         String id,
 
         String username,
@@ -18,9 +19,9 @@ public record ResetUserPasswordResponse(
 
         Boolean mustChangePassword,
 
-        List<ProjectsItem> projects) {
+        List<ProjectView> projects) {
 
-    public record ProjectsItem(
+    public record ProjectView(
             String projectId,
 
             List<String> permissions,

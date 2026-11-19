@@ -5,7 +5,8 @@ package redix.model.projects;
 
 import java.util.List;
 
-public record RegisterProjectResponse(
+/** A project as the API answers it: its projects.projectView, whichever route answered (findings row 272). */
+public record ProjectView(
         String id,
 
         String name,
@@ -18,7 +19,7 @@ public record RegisterProjectResponse(
 
         String description,
 
-        List<UnitsItem> units,
+        List<UnitView> units,
 
         List<String> permissions,
 
@@ -34,7 +35,7 @@ public record RegisterProjectResponse(
 
         List<String> unseenTables) {
 
-    public record UnitsItem(
+    public record UnitView(
             String id,
 
             String name) {

@@ -5,7 +5,7 @@ package redixapi;
 
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
-import redix.model.auth.SignInResponse;
+import redix.model.auth.Session;
 import redix.support.Api;
 import redix.support.History;
 import redix.support.People;
@@ -21,8 +21,8 @@ public class SignOutTest {
     @Test(description = "A sign out ends this device only", testName = "a5c218a9-2bf8-4f8d-942b-235896d0b698", priority = 1)
     public void aSignOutEndsThisDeviceOnly() {
         final @NotNull Person person = People.in(Projects.approved());
-        final @NotNull SignInResponse other = People.signIn(person.username(), People.PASSWORD);
-        final @NotNull SignInResponse leaving = People.signIn(person.username(), People.PASSWORD);
+        final @NotNull Session other = People.signIn(person.username(), People.PASSWORD);
+        final @NotNull Session leaving = People.signIn(person.username(), People.PASSWORD);
         given(Api.as(leaving.accessToken())).post("/auth/sign-out").then().statusCode(204);
         given(Api.as(leaving.accessToken())).get("/projects").then().statusCode(401);
         given(Api.anonymous()).body(Map.of("refreshToken", leaving.refreshToken())).post("/auth/refresh").then().statusCode(401);
@@ -33,7 +33,7 @@ public class SignOutTest {
     @Test(description = "A sign out is in the history", testName = "22246f46-cf57-45de-a037-7d190f4d7c20", priority = 2)
     public void aSignOutIsInTheHistory() {
         final @NotNull Person person = People.in(Projects.approved());
-        final @NotNull SignInResponse leaving = People.signIn(person.username(), People.PASSWORD);
+        final @NotNull Session leaving = People.signIn(person.username(), People.PASSWORD);
         given(Api.as(leaving.accessToken())).post("/auth/sign-out").then().statusCode(204);
         assertEquals(History.kindsOf(person.asked()).get(0), "signOut");
     }

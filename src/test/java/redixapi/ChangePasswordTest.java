@@ -7,8 +7,7 @@ import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.model.auth.ChangePasswordRequest;
-import redix.model.auth.ChangePasswordResponse;
-import redix.model.auth.SignInResponse;
+import redix.model.auth.Session;
 import redix.support.Api;
 import redix.support.History;
 import redix.support.People;
@@ -41,8 +40,8 @@ public class ChangePasswordTest {
     public void changingATemporaryPasswordEndsTheForcedChangeAndTheNewPasswordWorks() {
         final @NotNull Person newcomer = People.newcomer(Projects.approved());
         assertTrue(People.signIn(newcomer.username(), People.TEMPORARY).mustChangePassword());
-        final @NotNull ChangePasswordResponse changed = change(newcomer.token(), People.TEMPORARY, NEW_PASSWORD).then().statusCode(200).extract()
-                .as(ChangePasswordResponse.class);
+        final @NotNull Session changed = change(newcomer.token(), People.TEMPORARY, NEW_PASSWORD).then().statusCode(200).extract()
+                .as(Session.class);
         assertFalse(changed.mustChangePassword());
         given(Api.as(changed.accessToken())).get("/projects").then().statusCode(200);
         assertFalse(People.signIn(newcomer.username(), NEW_PASSWORD).mustChangePassword());
@@ -79,7 +78,7 @@ public class ChangePasswordTest {
         final @NotNull Person person = People.in(Projects.approved());
         change(person.token(), People.PASSWORD, "Seven1a").then().statusCode(400).body("code", equalTo("weakPassword"));
         final @NotNull String eight = "Eight1ab";
-        final @NotNull String token = change(person.token(), People.PASSWORD, eight).then().statusCode(200).extract().as(ChangePasswordResponse.class).accessToken();
+        final @NotNull String token = change(person.token(), People.PASSWORD, eight).then().statusCode(200).extract().as(Session.class).accessToken();
         change(token, eight, NEW_PASSWORD).then().statusCode(200);
         signIn(person.username(), NEW_PASSWORD).then().statusCode(200);
     }
@@ -87,8 +86,8 @@ public class ChangePasswordTest {
     @Test(description = "Changing the password signs out the other devices and keeps this one", testName = "53e362d6-eb51-4d0a-aeee-4a43dcd9e2e8", priority = 6)
     public void changingThePasswordSignsOutTheOtherDevicesAndKeepsThisOne() {
         final @NotNull Person person = People.in(Projects.approved());
-        final @NotNull SignInResponse other = People.signIn(person.username(), People.PASSWORD);
-        final @NotNull String kept = change(person.token(), People.PASSWORD, NEW_PASSWORD).then().statusCode(200).extract().as(ChangePasswordResponse.class)
+        final @NotNull Session other = People.signIn(person.username(), People.PASSWORD);
+        final @NotNull String kept = change(person.token(), People.PASSWORD, NEW_PASSWORD).then().statusCode(200).extract().as(Session.class)
                 .accessToken();
         given(Api.as(other.accessToken())).get("/projects").then().statusCode(401);
         given(Api.anonymous()).body(Map.of("refreshToken", other.refreshToken())).post("/auth/refresh").then().statusCode(401);

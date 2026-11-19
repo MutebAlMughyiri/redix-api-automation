@@ -8,10 +8,9 @@ import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.model.auth.ForgotPasswordRequest;
-import redix.model.auth.RefreshSessionRequest;
-import redix.model.auth.RefreshSessionResponse;
+import redix.model.auth.RefreshRequest;
+import redix.model.auth.Session;
 import redix.model.auth.ResetWithCodeRequest;
-import redix.model.auth.SignInResponse;
 import redix.support.Api;
 import redix.support.Emails;
 import redix.support.History;
@@ -71,7 +70,7 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "The right password opens a session with A15 minute access token", testName = "30e7ec12-32cd-4572-a4ac-9e241e087486", priority = 1)
     public void theRightPasswordOpensASessionWithA15MinuteAccessToken() {
         final @NotNull Person person = person();
-        final @NotNull SignInResponse session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(SignInResponse.class);
+        final @NotNull Session session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(Session.class);
         final @NotNull Duration left = Duration.between(Instant.now(), Instant.parse(session.accessTokenExpiresAt()));
         assertFalse(session.accessToken().isEmpty());
         assertFalse(session.refreshToken().isEmpty());
@@ -110,8 +109,8 @@ public class SignInWithUsernameAndPasswordTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person person = People.in(project);
         given(Api.asAdmin()).post("/projects/" + project + "/users/" + person.id() + "/disable").then().statusCode(200);
-        final @NotNull SignInResponse session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(SignInResponse.class);
-        given(Api.anonymous()).body(RefreshSessionRequest.builder().refreshToken(session.refreshToken()).build()).post("/auth/refresh").then().statusCode(200);
+        final @NotNull Session session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(Session.class);
+        given(Api.anonymous()).body(RefreshRequest.builder().refreshToken(session.refreshToken()).build()).post("/auth/refresh").then().statusCode(200);
     }
 
     @Test(description = "Someone inactive in every project is told a wrong password as anyone is", testName = "ee8208f4-5c56-4477-b3f3-a6417dda9864", priority = 6)
@@ -130,9 +129,9 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "A session says when its access token expires at sign in and at each renewal", testName = "90322d93-99a3-488b-ba44-052a2f419538", priority = 8)
     public void aSessionSaysWhenItsAccessTokenExpiresAtSignInAndAtEachRenewal() {
         final @NotNull Person person = person();
-        final @NotNull SignInResponse session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(SignInResponse.class);
-        final @NotNull RefreshSessionResponse renewed = given(Api.anonymous()).body(RefreshSessionRequest.builder().refreshToken(session.refreshToken()).build())
-                .post("/auth/refresh").then().statusCode(200).extract().as(RefreshSessionResponse.class);
+        final @NotNull Session session = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(Session.class);
+        final @NotNull Session renewed = given(Api.anonymous()).body(RefreshRequest.builder().refreshToken(session.refreshToken()).build())
+                .post("/auth/refresh").then().statusCode(200).extract().as(Session.class);
         assertTrue(Instant.parse(session.accessTokenExpiresAt()).isAfter(Instant.now()));
         assertTrue(!Instant.parse(renewed.accessTokenExpiresAt()).isBefore(Instant.parse(session.accessTokenExpiresAt())));
     }
@@ -145,11 +144,11 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "A refresh replaces the refresh token", testName = "49e3afff-0324-4616-9ac3-1eea9684d840", priority = 10)
     public void aRefreshReplacesTheRefreshToken() {
         final @NotNull Person person = person();
-        final @NotNull String first = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(SignInResponse.class).refreshToken();
-        final @NotNull String second = given(Api.anonymous()).body(RefreshSessionRequest.builder().refreshToken(first).build()).post("/auth/refresh").then()
-                .statusCode(200).extract().as(RefreshSessionResponse.class).refreshToken();
+        final @NotNull String first = signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(Session.class).refreshToken();
+        final @NotNull String second = given(Api.anonymous()).body(RefreshRequest.builder().refreshToken(first).build()).post("/auth/refresh").then()
+                .statusCode(200).extract().as(Session.class).refreshToken();
         assertNotEquals(second, first);
-        refusedAs(given(Api.anonymous()).body(RefreshSessionRequest.builder().refreshToken(first).build()).post("/auth/refresh"), 401, "sessionExpired");
+        refusedAs(given(Api.anonymous()).body(RefreshRequest.builder().refreshToken(first).build()).post("/auth/refresh"), 401, "sessionExpired");
     }
 
     @Test(description = "A session used within12 hours stays open and one unused for12 hours ends", testName = "99b554d2-021b-4457-912c-b4c53f3c1f33", priority = 11, enabled = false)
@@ -159,7 +158,7 @@ public class SignInWithUsernameAndPasswordTest {
 
     @Test(description = "The first user is the admin from configuration and must change the password", testName = "b3526a9c-222c-49ff-b8db-0f1d6c3443b4", priority = 12)
     public void theFirstUserIsTheAdminFromConfigurationAndMustChangeThePassword() {
-        final @NotNull SignInResponse admin = People.admin();
+        final @NotNull Session admin = People.admin();
         assertTrue(admin.permissions().contains("approveProjects"), "the admin holds " + admin.permissions());
         assertFalse(admin.mustChangePassword(), "the first sign-in of this run changed the configured password");
     }
@@ -182,7 +181,7 @@ public class SignInWithUsernameAndPasswordTest {
     @Test(description = "A session says what its user holds everywhere", testName = "63740293-33e6-4379-85fc-8f7567e50178", priority = 15)
     public void aSessionSaysWhatItsUserHoldsEverywhere() {
         final @NotNull Person person = person();
-        assertTrue(signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(SignInResponse.class).permissions().isEmpty());
+        assertTrue(signIn(person.username(), People.PASSWORD).then().statusCode(200).extract().as(Session.class).permissions().isEmpty());
     }
 
     @Test(description = "A code to the accounts email and a new password reset it and the old one no longer signs in", testName = "4c44309e-5fb4-435f-ab9b-06a28fc495dc", priority = 16)
@@ -321,7 +320,7 @@ public class SignInWithUsernameAndPasswordTest {
         }
         reset(person.username(), codeFor(person), NEW_PASSWORD).then().statusCode(204);
         given(person.asked()).get("/projects").then().statusCode(401);
-        assertFalse(signIn(person.username(), NEW_PASSWORD).then().statusCode(200).extract().as(SignInResponse.class).mustChangePassword());
+        assertFalse(signIn(person.username(), NEW_PASSWORD).then().statusCode(200).extract().as(Session.class).mustChangePassword());
     }
 
     @Test(description = "A wrong code ends no session", testName = "6b1396fc-54ec-4af2-a575-7c73f16443c6", priority = 32)

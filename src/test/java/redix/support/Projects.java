@@ -6,8 +6,8 @@ package redix.support;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
-import redix.model.projects.CreateProjectRequest;
-import redix.model.projects.CreateProjectResponse;
+import redix.model.projects.StartRequest;
+import redix.model.projects.ProjectView;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -60,8 +60,8 @@ public final class Projects {
 
     /** A project the admin made, still waiting for approval. */
     public static @NotNull String pending() {
-        final @NotNull CreateProjectRequest request = CreateProjectRequest.builder().name("Project " + UUID.randomUUID().toString().substring(0, 8))
+        final @NotNull StartRequest request = StartRequest.builder().name("Project " + UUID.randomUUID().toString().substring(0, 8))
                 .startDate(LocalDate.now().toString()).units(List.of("A1")).description("").partners(List.of()).build();
-        return given(Api.asAdmin()).body(request).post("/projects").then().statusCode(201).extract().as(CreateProjectResponse.class).id();
+        return given(Api.asAdmin()).body(request).post("/projects").then().statusCode(201).extract().as(ProjectView.class).id();
     }
 }

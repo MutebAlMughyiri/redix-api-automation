@@ -7,7 +7,7 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
-import redix.model.auth.SignInResponse;
+import redix.model.auth.Session;
 import redix.support.Api;
 import redix.support.History;
 import redix.support.People;
@@ -58,7 +58,7 @@ public class KeepAPhoneWithFingerprintOrFaceSignedInTest {
     public void biometricsBelongToOnePhone() {
         final @NotNull Person person = People.in(Projects.approved());
         biometrics(person.token(), true);
-        final @NotNull SignInResponse otherPhone = People.signIn(person.username(), People.PASSWORD);
+        final @NotNull Session otherPhone = People.signIn(person.username(), People.PASSWORD);
         assertFalse(otherPhone.usesBiometrics());
         renew(otherPhone.refreshToken()).then().statusCode(200).body("usesBiometrics", equalTo(false));
     }

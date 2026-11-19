@@ -6,9 +6,9 @@ package redix.support;
 import io.restassured.specification.RequestSpecification;
 import org.jetbrains.annotations.NotNull;
 import redix.model.auth.ChangePasswordRequest;
-import redix.model.auth.SignInResponse;
+import redix.model.auth.Session;
 import redix.model.users.CreateUserRequest;
-import redix.model.users.CreateUserResponse;
+import redix.model.users.UserView;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ public final class People {
     /** A person made in projectId as request says, signed in with their temporary password, which is all such a session may change. */
     public static @NotNull Person newcomer(final @NotNull String projectId, final @NotNull CreateUserRequest request) {
         final @NotNull String id = given(Api.asAdmin()).body(request).post("/projects/" + projectId + "/users").then().statusCode(201).extract()
-                .as(CreateUserResponse.class).id();
+                .as(UserView.class).id();
         return new Person(id, request.getUsername(), request.getEmail(), signIn(request.getUsername(), TEMPORARY).accessToken());
     }
 
@@ -66,14 +66,14 @@ public final class People {
     }
 
     /** The admin, signed in on a device of their own once the run's first sign-in has changed the password the API was started with. */
-    public static @NotNull SignInResponse admin() {
+    public static @NotNull Session admin() {
         Admin.token();
         return signIn(System.getenv("REDIX_ADMIN_USERNAME"), System.getenv("REDIX_ADMIN_NEW_PASSWORD"));
     }
 
     /** Signs username in with password, wanting 200. */
-    public static @NotNull SignInResponse signIn(final @NotNull String username, final @NotNull String password) {
+    public static @NotNull Session signIn(final @NotNull String username, final @NotNull String password) {
         return given(Api.anonymous()).body(Map.of("username", username, "password", password)).post("/auth/sign-in").then().statusCode(200).extract()
-                .as(SignInResponse.class);
+                .as(Session.class);
     }
 }
