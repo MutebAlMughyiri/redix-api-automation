@@ -7,21 +7,32 @@ import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 /**
  * The admin the API was started with: REDIX_ADMIN_USERNAME and REDIX_ADMIN_PASSWORD, the server's REDIX_Admin__Username and
  * REDIX_Admin__Password. The API makes that password temporary (BR-29), so the first sign-in changes it to REDIX_ADMIN_NEW_PASSWORD; on a
- * server whose admin already did, the new password is the one that signs in. Signed in once, at the first test that asks.
+ * server whose admin already did, the new password is the one that signs in. Signed in at the first test that asks, and again before the
+ * API's access token runs out (credentials.Lifetime, 15 minutes), so a run of any length keeps its admin.
  */
 final class Admin {
+    private static final @NotNull Duration RENEWED_AFTER = Duration.ofMinutes(10);
+
     private static @NotNull String token = "";
+
+    private static @NotNull Instant signedInAt = Instant.EPOCH;
 
     private Admin() {
     }
 
-    /** The admin's access token, from one sign-in for the whole run. */
+    /** The admin's access token: the first sign-in's, then a new one each RENEWED_AFTER, with the password the first one chose. */
     static synchronized @NotNull String token() {
+        if (!token.isEmpty() && Duration.between(signedInAt, Instant.now()).compareTo(RENEWED_AFTER) >= 0) {
+            token = signIn(required("REDIX_ADMIN_USERNAME"), required("REDIX_ADMIN_NEW_PASSWORD")).then().statusCode(200).extract().path("accessToken");
+            signedInAt = Instant.now();
+        }
         if (token.isEmpty()) {
             final @NotNull String username = required("REDIX_ADMIN_USERNAME");
             final @NotNull String newPassword = required("REDIX_ADMIN_NEW_PASSWORD");
@@ -34,6 +45,7 @@ final class Admin {
             final @NotNull Response signedIn = first.statusCode() == 200 && !Boolean.TRUE.equals(first.path("mustChangePassword"))
                     ? first : signIn(username, newPassword);
             token = signedIn.then().statusCode(200).extract().path("accessToken");
+            signedInAt = Instant.now();
         }
         return token;
     }

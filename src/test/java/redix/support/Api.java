@@ -24,7 +24,7 @@ public final class Api {
         return new RequestSpecBuilder().setBaseUri(URL).setContentType(ContentType.JSON).addFilter(new Report.Exchange()).build();
     }
 
-    /** A request as the admin, signed in once for the whole run. */
+    /** A request as the admin, whose session Admin keeps signed in for the whole run. */
     public static @NotNull RequestSpecification asAdmin() {
         return as(Admin.token());
     }

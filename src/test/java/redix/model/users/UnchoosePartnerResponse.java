@@ -29,6 +29,8 @@ public record UnchoosePartnerResponse(
 
             List<String> partnerIds,
 
-            Boolean isInactive) {
+            Boolean isInactive,
+
+            List<String> unseenTables) {
     }
 }

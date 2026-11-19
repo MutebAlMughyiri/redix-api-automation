@@ -30,7 +30,9 @@ public record CreateProjectResponse(
 
         String timeZone,
 
-        Integer utcOffsetMinutes) {
+        Integer utcOffsetMinutes,
+
+        List<String> unseenTables) {
 
     public record UnitsItem(
             String id,
