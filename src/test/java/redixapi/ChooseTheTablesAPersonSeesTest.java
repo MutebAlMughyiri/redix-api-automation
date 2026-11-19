@@ -4,6 +4,7 @@
 package redixapi;
 
 import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.Test;
 import redix.support.Api;
@@ -45,16 +46,12 @@ public class ChooseTheTablesAPersonSeesTest {
 
         /** Unticks table for the person, as their manager. */
         void untick(final @NotNull String table) {
-            given(Api.asAdmin()).delete(path(table)).then().statusCode(200);
+            seeTables(project, person.id(), false, table).then().statusCode(200);
         }
 
         /** Ticks table again for the person, as their manager. */
         void tick(final @NotNull String table) {
-            given(Api.asAdmin()).post(path(table)).then().statusCode(200);
-        }
-
-        private @NotNull String path(final @NotNull String table) {
-            return "/projects/" + project + "/users/" + person.id() + "/tables/" + table;
+            seeTables(project, person.id(), true, table).then().statusCode(200);
         }
 
         /** The ids of the entries «القيود» shows the person. */
@@ -66,6 +63,11 @@ public class ChooseTheTablesAPersonSeesTest {
         @NotNull List<String> offered() {
             return given(person.asked()).get("/projects/" + project + "/items/" + item + "/tables").then().statusCode(200).extract().jsonPath().getList("id");
         }
+    }
+
+    /** What ticking tables for userId in project when seen, or unticking them, answers the admin: all in one request (findings row 280). */
+    private static @NotNull Response seeTables(final @NotNull String project, final @NotNull String userId, final boolean seen, final @NotNull String... tables) {
+        return given(Api.asAdmin()).body(Map.of("seen", seen, "tableIds", List.of(tables))).post("/projects/" + project + "/users/" + userId + "/tables");
     }
 
     /** A purchase the admin recorded into table, sent and approved. */
@@ -135,7 +137,7 @@ public class ChooseTheTablesAPersonSeesTest {
         sighted.untick(sighted.group());
         sighted.tick(sighted.group());
         assertTrue(sighted.offered().contains(sighted.group()) && sighted.listed().contains(sighted.unseenEntry()), "ticking again did not bring the group back");
-        given(Api.asAdmin()).delete("/projects/" + sighted.project() + "/users/" + sighted.person().id() + "/tables/" + UUID.randomUUID()).then().statusCode(404);
+        seeTables(sighted.project(), sighted.person().id(), false, UUID.randomUUID().toString()).then().statusCode(404);
     }
 
     @Test(description = "Only those who see an entrys table are told of it", testName = "35dd35a4-f8ba-4e68-a2aa-e879d8174f35", priority = 5)
@@ -189,7 +191,7 @@ public class ChooseTheTablesAPersonSeesTest {
         final @NotNull String manager = given(Api.asAdmin()).get(project + "/users").then().statusCode(200).extract()
                 .path("find { it.projects[0].permissions.contains('manageUsers') }.id");
 
-        given(Api.asAdmin()).delete(project + "/users/" + manager + "/tables/" + sighted.group()).then().statusCode(200);
+        seeTables(sighted.project(), manager, false, sighted.group()).then().statusCode(200);
 
         final @NotNull List<String> persons = given(sighted.person().asked()).get(project + "/tables").then().statusCode(200).extract().jsonPath()
                 .getList("collectMany { it.items }.collectMany { it.tables }.id");
