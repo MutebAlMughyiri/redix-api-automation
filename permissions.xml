@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Only the permissions (UC-009, UC-008, redix-api #112), three classes at once: mvn test -Dsurefire.suiteXmlFiles=permissions.xml -->
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Permissions" parallel="classes" thread-count="3">
+    <test name="Permissions">
+        <classes>
+            <class name="redixapi.PermissionsTest"/>
+            <class name="redixapi.AddPeopleToAProjectAndTickTheirPermissionsTest"/>
+            <class name="redixapi.AskForAPermissionChangeTest"/>
+        </classes>
+    </test>
+</suite>

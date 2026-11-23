@@ -86,9 +86,10 @@ public class PermissionsTest {
         final @NotNull String project = Projects.approved();
         final @NotNull Person inactive = People.in(project, IN_A_PROJECT.stream().filter(name -> !List.of("seeChosenCapital", "readProject").contains(name)).toArray(String[]::new));
         given(Api.asAdmin()).post("/projects/" + project + "/users/" + inactive.id() + "/disable").then().statusCode(200);
-        for (final Route route : Routes.every().stream().filter(route -> route.path().contains("{projectId}") && !route.permission().isEmpty()).toList()) {
-            assertEquals(gateOf(given(inactive.asked()).body("{}").request(route.method(), route.in(project))), "forbidden", route.toString());
-        }
+        final @NotNull List<String> through = Routes.every().stream().filter(route -> route.path().contains("{projectId}") && !route.permission().isEmpty()).toList()
+                .parallelStream().filter(route -> !gateOf(given(inactive.asked()).body("{}").request(route.method(), route.in(project))).equals("forbidden"))
+                .map(Route::toString).toList();
+        assertEquals(through, List.of(), "routes letting through someone inactive in the project");
     }
 
     @Test(description = "A permission held everywhere reaches every project and an unknown one is not found", testName = "2769b8ae-de76-4d8b-95bc-5421ede728a9", priority = 4)
@@ -182,30 +183,55 @@ public class PermissionsTest {
         assertEquals(unnamed, List.of(), "a route of a project names no permission");
     }
 
+    /**
+     * What sweeping theirs, the routes that need permission, says against it, in a project of its own with a person of its own: each route that
+     * answers through before permission is ticked, or forbidden after.
+     */
+    private static @NotNull List<String> sweep(final @NotNull List<Route> theirs, final @NotNull String permission) {
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person person = permission.equals("readProject") ? People.in(Projects.approved()) : People.in(project);
+        final @NotNull List<String> wrong = new ArrayList<>();
+        for (final Route route : theirs) {
+            if (!gateOf(given(person.asked()).body("{}").request(route.method(), route.in(project))).equals("forbidden")) {
+                wrong.add(route + " without " + permission);
+            }
+        }
+        if (permission.equals("readProject")) {
+            given(Api.asAdmin()).body(Map.of("username", person.username())).post("/projects/" + project + "/users/existing").then().statusCode(200);
+        } else {
+            tick(project, person.id(), permission).then().statusCode(200);
+        }
+        for (final Route route : theirs) {
+            if (!gateOf(given(person.asked()).body("{}").request(route.method(), route.in(project))).equals("through")) {
+                wrong.add(route + " with " + permission);
+            }
+        }
+        return wrong;
+    }
+
     @Test(description = "Every route refuses whoever lacks its permission and opens once it is ticked", testName = "046a14c5-ade5-412b-931a-ddeb8106664a", priority = 13)
     public void everyRouteRefusesWhoeverLacksItsPermissionAndOpensOnceItIsTicked() {
         final @NotNull List<Route> gated = Routes.every().stream().filter(route -> route.path().contains("{projectId}") && !route.permission().isEmpty()
                 && !route.permission().equals("approveProjects")).toList();
         assertTrue(gated.size() > 100, gated.size() + " routes need a permission of a project");
-        for (final String permission : gated.stream().map(Route::permission).distinct().toList()) {
-            final @NotNull String project = Projects.approved();
-            final @NotNull Person person = permission.equals("readProject") ? People.in(Projects.approved()) : People.in(project);
-            final @NotNull List<Route> theirs = gated.stream().filter(route -> route.permission().equals(permission)).toList();
-            for (final Route route : theirs) {
-                assertEquals(gateOf(given(person.asked()).body("{}").request(route.method(), route.in(project))), "forbidden", route + " without " + permission);
-            }
-            if (permission.equals("readProject")) {
-                given(Api.asAdmin()).body(Map.of("username", person.username())).post("/projects/" + project + "/users/existing").then().statusCode(200);
-            } else {
-                tick(project, person.id(), permission).then().statusCode(200);
-            }
-            for (final Route route : theirs) {
-                assertEquals(gateOf(given(person.asked()).body("{}").request(route.method(), route.in(project))), "through", route + " with " + permission);
-            }
+        final @NotNull List<String> wrong = gated.stream().map(Route::permission).distinct().toList().parallelStream()
+                .flatMap(permission -> sweep(gated.stream().filter(route -> route.permission().equals(permission)).toList(), permission).stream()).toList();
+        assertEquals(wrong, List.of(), "routes answering against their permission");
+    }
+
+    @Test(description = "Every route approving projects refuses whoever lacks it and opens for the admin", testName = "c7e80747-8d5f-4ae7-b73b-e898b0aee7af", priority = 14)
+    public void everyRouteApprovingProjectsRefusesWhoeverLacksItAndOpensForTheAdmin() {
+        final @NotNull List<Route> approving = Routes.every().stream().filter(route -> route.permission().equals("approveProjects")).toList();
+        assertEquals(approving.size(), 3, approving.toString());
+        final @NotNull String project = Projects.approved();
+        final @NotNull Person holder = People.in(project, IN_A_PROJECT.stream().filter(name -> !name.equals("seeChosenCapital")).toArray(String[]::new));
+        for (final Route route : approving) {
+            assertEquals(gateOf(given(holder.asked()).body("{}").request(route.method(), route.in(project))), "forbidden", route + " held in the project only");
+            assertEquals(gateOf(given(Api.asAdmin()).body("{}").request(route.method(), route.in(project))), "through", route + " held by the admin");
         }
     }
 
-    @Test(description = "Another project is forbidden", testName = "792f125c-fddf-4dcf-b421-9890d799a9c5", priority = 14)
+    @Test(description = "Another project is forbidden", testName = "792f125c-fddf-4dcf-b421-9890d799a9c5", priority = 15)
     public void anotherProjectIsForbidden() {
         final @NotNull Person person = People.in(Projects.approved(), "manageSettings");
         final @NotNull String other = Projects.approved();
@@ -213,7 +239,7 @@ public class PermissionsTest {
         given(person.asked()).body(Map.of("name", "Bank", "type", "bank")).post("/projects/" + other + "/accounts").then().statusCode(403);
     }
 
-    @Test(description = "Permissions follow what is ticked in each project", testName = "d4b2935a-f5fe-41eb-a3d2-69535930fc73", priority = 15)
+    @Test(description = "Permissions follow what is ticked in each project", testName = "d4b2935a-f5fe-41eb-a3d2-69535930fc73", priority = 16)
     public void permissionsFollowWhatIsTickedInEachProject() {
         final @NotNull String project = Projects.approved();
         final @NotNull String other = Projects.approved();
@@ -223,7 +249,7 @@ public class PermissionsTest {
         given(person.asked()).body(Map.of("name", "Bank", "type", "bank")).post("/projects/" + other + "/accounts").then().statusCode(403);
     }
 
-    @Test(description = "Field and reader cannot change a project", testName = "63a38ce0-92b2-4d5d-a159-8e07e3c24e0f", priority = 16)
+    @Test(description = "Field and reader cannot change a project", testName = "63a38ce0-92b2-4d5d-a159-8e07e3c24e0f", priority = 17)
     public void fieldAndReaderCannotChangeAProject() {
         final @NotNull String project = Projects.approved();
         for (final Person person : List.of(People.in(project, "recordEntries", "attachFiles"), People.in(project))) {
@@ -235,7 +261,7 @@ public class PermissionsTest {
         }
     }
 
-    @Test(description = "A sessionless request is unauthorized", testName = "3836ca2a-3168-4853-aeb0-eff73826bf03", priority = 17)
+    @Test(description = "A sessionless request is unauthorized", testName = "3836ca2a-3168-4853-aeb0-eff73826bf03", priority = 18)
     public void aSessionlessRequestIsUnauthorized() {
         final @NotNull String project = Projects.approved();
         for (final Route route : Routes.every().stream().filter(route -> !route.open()).toList()) {
@@ -243,7 +269,7 @@ public class PermissionsTest {
         }
     }
 
-    @Test(description = "Whoever starts a project manages it", testName = "f08d6974-6a3b-4921-b641-dca8df9cb43d", priority = 18)
+    @Test(description = "Whoever starts a project manages it", testName = "f08d6974-6a3b-4921-b641-dca8df9cb43d", priority = 19)
     public void whoeverStartsAProjectManagesIt() {
         final @NotNull Registered registered = Projects.registered();
         assertTrue(permissionsOf(registered.token(), registered.id()).containsAll(List.of("manageProject", "manageUsers", "manageStructure", "manageSettings")));
@@ -251,13 +277,13 @@ public class PermissionsTest {
         assertTrue(permissionsOf(People.admin().accessToken(), Projects.approved()).contains("manageProject"), "the admin manages the project they start");
     }
 
-    @Test(description = "Whoever registers a project holds every permission of a project in it", testName = "0353b780-89e6-4517-9d99-bcd2a23e10c3", priority = 19)
+    @Test(description = "Whoever registers a project holds every permission of a project in it", testName = "0353b780-89e6-4517-9d99-bcd2a23e10c3", priority = 20)
     public void whoeverRegistersAProjectHoldsEveryPermissionOfAProjectInIt() {
         final @NotNull Registered registered = Projects.registered();
         assertEquals(permissionsOf(registered.token(), registered.id()).size(), 18);
     }
 
-    @Test(description = "Deleting is its own permission", testName = "2e546995-7570-4aa6-98d9-7d99df618d50", priority = 20)
+    @Test(description = "Deleting is its own permission", testName = "2e546995-7570-4aa6-98d9-7d99df618d50", priority = 21)
     public void deletingIsItsOwnPermission() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person person = People.in(project, "recordEntries", "chargeAnyAccount");
@@ -268,7 +294,7 @@ public class PermissionsTest {
         given(person.asked()).get("/projects/" + project + "/entries").then().statusCode(200).body("id", not(hasItem(entry)));
     }
 
-    @Test(description = "Report permissions_whoever reads a project sees its reports and whoever moved money or saw all capital generates them", testName = "1db9de15-b1c9-4275-9842-b1b5586e2a73", priority = 21, enabled = false)
+    @Test(description = "Report permissions_whoever reads a project sees its reports and whoever moved money or saw all capital generates them", testName = "1db9de15-b1c9-4275-9842-b1b5586e2a73", priority = 22, enabled = false)
     public void reportPermissionsWhoeverReadsAProjectSeesItsReportsAndWhoeverMovedMoneyOrSawAllCapitalGeneratesThem() {
         throw new AssertionError("about the migration that ticked them on the rows it found, inside the server; Go's internal/db tests prove it");
     }

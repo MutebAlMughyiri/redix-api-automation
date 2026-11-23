@@ -41,8 +41,9 @@ public class AskForAPermissionChangeTest {
         return given(person.asked()).get("/projects").then().statusCode(200).extract().path("find { it.id == '" + projectId + "' }.permissions");
     }
 
-    private static @NotNull List<String> toldOf(final @NotNull RequestSpecification as) {
-        return given(as).get("/notifications").then().statusCode(200).extract().jsonPath().getList("kind");
+    /** What as was told about projectId, by kind: only that project's, as every other test tells the admin about its own projects at once. */
+    private static @NotNull List<String> toldOf(final @NotNull RequestSpecification as, final @NotNull String projectId) {
+        return given(as).get("/notifications").then().statusCode(200).extract().jsonPath().getList("findAll { it.projectId == '" + projectId + "' }.kind");
     }
 
     private static @NotNull JsonPath waiting(final @NotNull String projectId) {
@@ -53,15 +54,15 @@ public class AskForAPermissionChangeTest {
     public void askingChangesNothingUntilAManagerDecidesAndTheManagersAreTold() {
         final @NotNull String project = Projects.approved();
         final @NotNull Person person = People.in(project, "seeReports");
-        final int told = toldOf(Api.asAdmin()).size();
+        final int told = toldOf(Api.asAdmin(), project).size();
 
         ask(person.asked(), project, List.of("recordEntries"), List.of("seeReports"), "I record the expenses").then().statusCode(201)
                 .body("status", equalTo("waiting")).body("reason", equalTo("I record the expenses"));
 
         assertTrue(permissionsOf(person, project).contains("seeReports") && !permissionsOf(person, project).contains("recordEntries"),
                 "asking changed what the person holds");
-        assertEquals(toldOf(Api.asAdmin()).size(), told + 1, "the manager was not told");
-        assertTrue(toldOf(Api.asAdmin()).contains("permissionRequested"), "the manager's notice is not a permission request");
+        assertEquals(toldOf(Api.asAdmin(), project).size(), told + 1, "the manager was not told");
+        assertTrue(toldOf(Api.asAdmin(), project).contains("permissionRequested"), "the manager's notice is not a permission request");
         final @NotNull JsonPath listed = waiting(project);
         assertEquals(listed.getList("gives"), List.of(List.of("recordEntries")));
         assertEquals(listed.getList("takes"), List.of(List.of("seeReports")));
@@ -80,7 +81,7 @@ public class AskForAPermissionChangeTest {
 
         final @NotNull List<String> held = permissionsOf(person, project);
         assertTrue(held.containsAll(List.of("recordEntries", "moveMoney", "readProject")) && !held.contains("seeReports"), "held after approval: " + held);
-        assertTrue(toldOf(person.asked()).contains("permissionRequestApproved"), "the person was not told it was approved");
+        assertTrue(toldOf(person.asked(), project).contains("permissionRequestApproved"), "the person was not told it was approved");
         given(Api.asAdmin()).post(requests(project) + "/" + request + "/approve").then().statusCode(404);
     }
 
@@ -97,7 +98,7 @@ public class AskForAPermissionChangeTest {
         final @NotNull JsonPath mine = given(person.asked()).get(requests(project) + "/mine").then().statusCode(200).extract().jsonPath();
         assertEquals(mine.getString("[0].status"), "rejected");
         assertEquals(mine.getString("[0].rejectionReason"), "Not this month");
-        assertTrue(toldOf(person.asked()).contains("permissionRequestRejected"), "the person was not told it was rejected");
+        assertTrue(toldOf(person.asked(), project).contains("permissionRequestRejected"), "the person was not told it was rejected");
     }
 
     @Test(description = "A new request replaces the waiting one and one can be withdrawn", testName = "dac34156-be6d-4ac4-8453-603024514af5", priority = 4)
