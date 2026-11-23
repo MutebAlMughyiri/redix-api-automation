@@ -356,4 +356,32 @@ public class ManageContractsTest {
         refusedAs(given(Api.asAdmin()).post(contracts(project) + "/" + contract + "/disable"), 409, "projectFinished");
         assertEquals(listed(project).getList("id"), List.of(contract));
     }
+
+    @Test(description = "A contract answers what remains once its waiting payments are approved", testName = "f77e52e6-7e46-47cd-83ea-e8e7875dd207", priority = 28)
+    public void aContractAnswersWhatRemainsOnceItsWaitingPaymentsAreApproved() {
+        final @NotNull String project = Projects.approved();
+        final @NotNull String contract = added(project, terms(project));
+        paid(project, contract, 3000, false);
+        Entries.submit(project, Entries.payment(project, Structure.itemId(project, Structure.CONTRACTOR_PAYMENTS), contract, 1500, false));
+        final @NotNull JsonPath counted = one(project, contract);
+        assertEquals(counted.getDouble("pending"), 1500.0);
+        assertEquals(counted.getDouble("remainingAfterApproval"), 5500.0);
+    }
+
+    @Test(description = "A contract answers the word of how it stands", testName = "f8550576-f527-4fbb-a52d-e1c30ccc7b37", priority = 29)
+    public void aContractAnswersTheWordOfHowItStands() {
+        final @NotNull String project = Projects.approved();
+        final @NotNull String contract = added(project, terms(project));
+        assertEquals(one(project, contract).getString("standingWordKey"), "contracts.notStarted");
+        paid(project, contract, 3000, false);
+        assertEquals(one(project, contract).getString("standingWordKey"), "contracts.running");
+        paid(project, contract, 9000, false);
+        assertEquals(one(project, contract).getString("standingWordKey"), "contracts.overrun");
+        given(Api.asAdmin()).post(contracts(project) + "/" + contract + "/disable").then().statusCode(200);
+        assertEquals(one(project, contract).getString("standingWordKey"), "contracts.disabled");
+        final @NotNull Map<String, Object> open = terms(project);
+        open.put("isOpenValue", true);
+        open.put("value", 0);
+        assertEquals(one(project, added(project, open)).getString("standingWordKey"), "contracts.openValue");
+    }
 }
